@@ -247,7 +247,183 @@ export function useUpdateAlertStatus() {
       const { error } = await supabase.from("monitoring_alerts").update(patch).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["monitoring_alerts"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["monitoring_alerts"] });
+      qc.invalidateQueries({ queryKey: ["unified_alerts"] });
+    },
+  });
+}
+
+// =====================
+// UNIFIED ALERTS (monitoring + license + critical diagnostics)
+// =====================
+export type UnifiedAlertCategory = "ambiental" | "fundiario" | "licenca" | "monitoramento";
+export type UnifiedAlertStatus = "novo" | "visualizado" | "resolvido";
+
+export interface UnifiedAlert {
+  id: string;
+  source_table: "monitoring_alerts" | "license_alerts" | "property_diagnostics";
+  category: UnifiedAlertCategory;
+  severidade: "alta" | "media" | "baixa";
+  status: UnifiedAlertStatus;
+  title: string;
+  description: string | null;
+  date: string;
+  property_id: string | null;
+  property_name: string | null;
+  license_id: string | null;
+  license_label: string | null;
+  raw_kind: string | null;
+}
+
+function diagnosticToCategory(kind: string): UnifiedAlertCategory {
+  if (kind === "irregularidade_ambiental" || kind === "embargo" || kind === "desmatamento") return "ambiental";
+  if (kind === "sem_certificacao" || kind === "documental" || kind === "sobreposicao") return "fundiario";
+  return "ambiental";
+}
+
+export function useUnifiedAlerts() {
+  return useQuery({
+    queryKey: ["unified_alerts"],
+    queryFn: async (): Promise<UnifiedAlert[]> => {
+      const [mon, lic, diag] = await Promise.all([
+        supabase
+          .from("monitoring_alerts")
+          .select("*, rural_properties(name)")
+          .order("alert_date", { ascending: false })
+          .limit(200),
+        supabase
+          .from("license_alerts")
+          .select("*, environmental_licenses(license_type, license_number, property_id, rural_properties(name))")
+          .order("triggered_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("property_diagnostics")
+          .select("*, rural_properties(name)")
+          .eq("severidade", "alta")
+          .order("generated_at", { ascending: false })
+          .limit(200),
+      ]);
+
+      if (mon.error) throw mon.error;
+      if (lic.error) throw lic.error;
+      if (diag.error) throw diag.error;
+
+      const list: UnifiedAlert[] = [];
+
+      for (const r of (mon.data ?? []) as unknown as Array<{
+        id: string; alert_type: string; title: string; description: string | null;
+        severidade: "alta" | "media" | "baixa"; status: UnifiedAlertStatus;
+        alert_date: string; property_id: string;
+        rural_properties?: { name: string } | null;
+      }>) {
+        list.push({
+          id: r.id,
+          source_table: "monitoring_alerts",
+          category: "monitoramento",
+          severidade: r.severidade,
+          status: r.status,
+          title: r.title,
+          description: r.description,
+          date: r.alert_date,
+          property_id: r.property_id,
+          property_name: r.rural_properties?.name ?? null,
+          license_id: null,
+          license_label: null,
+          raw_kind: r.alert_type,
+        });
+      }
+
+      const KIND_LABEL: Record<string, { title: string; sev: "alta" | "media" | "baixa" }> = {
+        "180_dias": { title: "Licença vence em até 180 dias", sev: "baixa" },
+        "90_dias": { title: "Licença vence em até 90 dias", sev: "media" },
+        "30_dias": { title: "Licença vence em até 30 dias", sev: "alta" },
+        vencida: { title: "Licença vencida", sev: "alta" },
+      };
+
+      for (const r of (lic.data ?? []) as unknown as Array<{
+        id: string; license_id: string; kind: string; status: UnifiedAlertStatus; triggered_at: string;
+        environmental_licenses?: {
+          license_type: string; license_number: string | null; property_id: string | null;
+          rural_properties?: { name: string } | null;
+        } | null;
+      }>) {
+        const meta = KIND_LABEL[r.kind] ?? { title: `Alerta de licença (${r.kind})`, sev: "media" as const };
+        const lbl = r.environmental_licenses
+          ? `${r.environmental_licenses.license_type}${r.environmental_licenses.license_number ? ` ${r.environmental_licenses.license_number}` : ""}`
+          : null;
+        list.push({
+          id: r.id,
+          source_table: "license_alerts",
+          category: "licenca",
+          severidade: meta.sev,
+          status: r.status,
+          title: meta.title,
+          description: lbl ? `Licença ${lbl}` : null,
+          date: r.triggered_at,
+          property_id: r.environmental_licenses?.property_id ?? null,
+          property_name: r.environmental_licenses?.rural_properties?.name ?? null,
+          license_id: r.license_id,
+          license_label: lbl,
+          raw_kind: r.kind,
+        });
+      }
+
+      for (const r of (diag.data ?? []) as unknown as Array<{
+        id: string; kind: string; title: string; description: string | null;
+        severidade: "alta" | "media" | "baixa"; generated_at: string; property_id: string;
+        rural_properties?: { name: string } | null;
+      }>) {
+        list.push({
+          id: r.id,
+          source_table: "property_diagnostics",
+          category: diagnosticToCategory(r.kind),
+          severidade: r.severidade,
+          status: "novo",
+          title: r.title,
+          description: r.description,
+          date: r.generated_at,
+          property_id: r.property_id,
+          property_name: r.rural_properties?.name ?? null,
+          license_id: null,
+          license_label: null,
+          raw_kind: r.kind,
+        });
+      }
+
+      list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return list;
+    },
+  });
+}
+
+export function useUpdateUnifiedAlertStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      source_table,
+      status,
+    }: {
+      id: string;
+      source_table: UnifiedAlert["source_table"];
+      status: UnifiedAlertStatus;
+    }) => {
+      if (source_table === "property_diagnostics") {
+        // diagnostics have no status column — no-op
+        return;
+      }
+      const patch: { status: UnifiedAlertStatus; resolved_at?: string } = { status };
+      if (source_table === "monitoring_alerts" && status === "resolvido") {
+        patch.resolved_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from(source_table).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["unified_alerts"] });
+      qc.invalidateQueries({ queryKey: ["monitoring_alerts"] });
+    },
   });
 }
 
