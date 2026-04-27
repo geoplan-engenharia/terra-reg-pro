@@ -96,7 +96,7 @@ function Header() {
           </Link>
           <Link
             to="/signup"
-            search={{ token: undefined as unknown as string }}
+           
             className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-glow hover:opacity-90"
           >
             Criar conta <ArrowRight className="h-3.5 w-3.5" />
@@ -129,7 +129,7 @@ function Hero() {
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             to="/signup"
-            search={{ token: undefined as unknown as string }}
+           
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-90 sm:w-auto"
           >
             Criar conta gratuita <ArrowRight className="h-4 w-4" />
@@ -365,7 +365,7 @@ function CTA() {
             <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 to="/signup"
-                search={{ token: undefined as unknown as string }}
+               
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-glow hover:opacity-90 sm:w-auto"
               >
                 Criar conta <ArrowRight className="h-4 w-4" />
@@ -400,7 +400,7 @@ function Footer() {
         </div>
         <div className="flex items-center gap-5">
           <Link to="/login" className="hover:text-foreground">Entrar</Link>
-          <Link to="/signup" search={{ token: undefined as unknown as string }} className="hover:text-foreground">Criar conta</Link>
+          <Link to="/signup" className="hover:text-foreground">Criar conta</Link>
           <a href="#contato" className="hover:text-foreground">Contato</a>
         </div>
       </div>
