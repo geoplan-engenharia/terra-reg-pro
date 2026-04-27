@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
-import { useProperties, useMonitoringAlerts } from "@/lib/queries";
+import { useProperties, useMonitoringAlerts, useUnifiedAlerts, useLicenses } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { seedDemoData } from "@/lib/seed-demo";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,6 +41,8 @@ function Dashboard() {
   const { profile, isAdmin } = useAuth();
   const props = useProperties();
   const alerts = useMonitoringAlerts();
+  const unified = useUnifiedAlerts();
+  const licenses = useLicenses();
   const qc = useQueryClient();
   const [seeding, setSeeding] = useState(false);
 
@@ -48,6 +50,20 @@ function Dashboard() {
   const totalArea = items.reduce((s, i) => s + (i.area_ha ?? 0), 0);
   const comRisco = items.filter((i) => i.car_status === "pendente" || i.sigef_status === "nao_certificado").length;
   const monitorados = items.filter((i) => i.monitorado).length;
+
+  const unifiedList = unified.data ?? [];
+  const novos = unifiedList.filter((a) => a.status === "novo").length;
+  const criticos = unifiedList.filter((a) => a.severidade === "alta" && a.status !== "resolvido").length;
+  const licencas30 = (licenses.data ?? []).filter((l) => {
+    if (!l.expiration_date) return false;
+    const dias = Math.ceil((new Date(l.expiration_date).getTime() - Date.now()) / 86400000);
+    return dias >= 0 && dias <= 30;
+  }).length;
+  const imoveisAltaSev = new Set(
+    unifiedList
+      .filter((a) => a.severidade === "alta" && a.source_table === "property_diagnostics" && a.property_id)
+      .map((a) => a.property_id!)
+  ).size;
 
   const loadDemo = async () => {
     if (!profile) return;
@@ -98,6 +114,13 @@ function Dashboard() {
           <KpiCard icon={ShieldCheck} label="Certificados SIGEF" value={String(items.filter((i) => i.sigef_status === "certificado").length)} delta="Sem pendência fundiária" tone="info" />
           <KpiCard icon={AlertTriangle} label="Com pendência" value={String(comRisco)} delta="CAR pendente ou SIGEF ausente" tone="danger" />
           <KpiCard icon={Eye} label="Monitorados" value={String(monitorados)} delta="Verificação contínua" tone="warn" />
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard icon={Bell} label="Alertas novos" value={String(novos)} delta="Aguardando triagem" tone="info" />
+          <KpiCard icon={AlertTriangle} label="Alertas críticos" value={String(criticos)} delta="Severidade alta em aberto" tone="danger" />
+          <KpiCard icon={ShieldCheck} label="Licenças vencendo" value={String(licencas30)} delta="Próximos 30 dias" tone="warn" />
+          <KpiCard icon={Activity} label="Imóveis em risco alto" value={String(imoveisAltaSev)} delta="Diagnóstico crítico" tone="danger" />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
