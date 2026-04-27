@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
-import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown } from "lucide-react";
+import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry, useReprocessDiagnostics } from "@/lib/queries";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
