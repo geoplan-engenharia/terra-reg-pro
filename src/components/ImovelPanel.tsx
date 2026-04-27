@@ -320,6 +320,7 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
         </div>
       </div>
       {reportOpen && <ReportModal propertyId={imovel.id} onClose={() => setReportOpen(false)} />}
+      {envOpen && <EnvironmentalAnalysisModal propertyId={imovel.id} initial={latestEnv} onClose={() => setEnvOpen(false)} />}
     </aside>
   );
 }
