@@ -17,7 +17,9 @@ import {
   Bell,
   Tag,
   Loader2,
+  Bug,
 } from "lucide-react";
+import { SupportReportForm } from "@/components/SupportReportForm";
 import { useState } from "react";
 
 export const Route = createFileRoute("/configuracoes")({
