@@ -203,6 +203,51 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
           </div>
         </Section>
 
+        <Section title="Análise ambiental" icon={Leaf}>
+          {latestEnv ? (
+            <div className="rounded-md border border-border bg-background/30 p-3 text-xs space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className={cn("rounded-md border px-2 py-1.5", latestEnv.has_desmatamento ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-success/30 bg-success/10 text-success")}>
+                  <div className="text-[10px] uppercase tracking-wider opacity-80">Desmatamento</div>
+                  <div className="text-[11px] font-semibold">
+                    {latestEnv.has_desmatamento ? `Sim · ${latestEnv.desmatamento_area_ha != null ? `${Number(latestEnv.desmatamento_area_ha).toLocaleString("pt-BR")} ha` : "—"}` : "Não"}
+                  </div>
+                </div>
+                <div className={cn("rounded-md border px-2 py-1.5", latestEnv.has_embargo ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-success/30 bg-success/10 text-success")}>
+                  <div className="text-[10px] uppercase tracking-wider opacity-80">Embargo</div>
+                  <div className="text-[11px] font-semibold">
+                    {latestEnv.has_embargo ? `Sim · ${latestEnv.embargo_area_ha != null ? `${Number(latestEnv.embargo_area_ha).toLocaleString("pt-BR")} ha` : "—"}` : "Não"}
+                  </div>
+                </div>
+                <div className={cn("rounded-md border px-2 py-1.5", latestEnv.has_reserva_legal_deficit ? "border-warning/40 bg-warning/10 text-warning" : "border-success/30 bg-success/10 text-success")}>
+                  <div className="text-[10px] uppercase tracking-wider opacity-80">Déficit RL</div>
+                  <div className="text-[11px] font-semibold">{latestEnv.has_reserva_legal_deficit ? "Possível" : "Não"}</div>
+                </div>
+                <div className={cn("rounded-md border px-2 py-1.5", latestEnv.has_app_violation ? "border-warning/40 bg-warning/10 text-warning" : "border-success/30 bg-success/10 text-success")}>
+                  <div className="text-[10px] uppercase tracking-wider opacity-80">Intervenção APP</div>
+                  <div className="text-[11px] font-semibold">{latestEnv.has_app_violation ? "Possível" : "Não"}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+                <span>Analisado em {new Date(latestEnv.analyzed_at).toLocaleString("pt-BR")}</span>
+                {envHistory.length > 1 && <span>{envHistory.length} análises no histórico</span>}
+              </div>
+              {canEditProperties && (
+                <button onClick={() => setEnvOpen(true)} className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] h-8 rounded-md border border-border hover:bg-accent/10">
+                  <Pencil className="h-3 w-3" /> Editar análise ambiental
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              Nenhuma análise ambiental cadastrada.
+              {canEditProperties && (
+                <button onClick={() => setEnvOpen(true)} className="ml-1 text-primary hover:underline">Cadastrar análise</button>
+              )}
+            </div>
+          )}
+        </Section>
+
         <Section title="Geometria vinculada" icon={FileJson}>
           {geometry ? (
             <div className="rounded-md border border-border bg-background/30 p-3 text-xs space-y-1">
