@@ -1,6 +1,14 @@
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, LogOut } from "lucide-react";
+import { useAuth, ROLE_LABEL } from "@/lib/auth";
+import { useNavigate } from "@tanstack/react-router";
 
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const initials = (profile?.full_name ?? profile?.email ?? "?")
+    .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+  const role = profile?.roles[0];
+
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card/50 backdrop-blur px-6">
       <div>
@@ -15,12 +23,23 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
             className="h-9 w-80 rounded-md border border-input bg-input/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <button className="relative h-9 w-9 rounded-md border border-border bg-card hover:bg-accent/10 grid place-items-center">
+        <button className="relative h-9 w-9 rounded-md border border-border bg-card hover:bg-accent/10 grid place-items-center" aria-label="Notificações">
           <Bell className="h-4 w-4" />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
         </button>
-        <div className="h-9 w-9 rounded-full bg-gradient-primary grid place-items-center text-sm font-semibold text-primary-foreground">
-          RA
+        <div className="flex items-center gap-2 pl-2 border-l border-border">
+          <div className="text-right hidden sm:block">
+            <div className="text-xs font-medium leading-tight">{profile?.full_name ?? profile?.email ?? "Usuário"}</div>
+            <div className="text-[10px] text-muted-foreground leading-tight">
+              {profile?.organization_name}{role ? ` · ${ROLE_LABEL[role]}` : ""}
+            </div>
+          </div>
+          <div className="h-9 w-9 rounded-full bg-gradient-primary grid place-items-center text-xs font-semibold text-primary-foreground">
+            {initials}
+          </div>
+          <button onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
+            className="h-9 w-9 rounded-md border border-border bg-card hover:bg-accent/10 grid place-items-center" aria-label="Sair">
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </header>
