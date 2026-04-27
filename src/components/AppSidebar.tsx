@@ -64,6 +64,20 @@ export function AppSidebar() {
             Membros
           </Link>
         )}
+        {isSuperAdmin && (
+          <Link
+            to="/admin"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors mt-2 border border-destructive/30 bg-destructive/5",
+              pathname.startsWith("/admin")
+                ? "text-destructive font-medium"
+                : "text-destructive/80 hover:bg-destructive/10"
+            )}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Admin Plataforma
+          </Link>
+        )}
       </nav>
       <div className="p-4 border-t border-sidebar-border text-xs text-muted-foreground">
         <div className="rounded-md border border-sidebar-border bg-sidebar-accent/30 p-3">
