@@ -90,7 +90,7 @@ function Alertas() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <FilterField label="Tipo">
-              <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="select">
+              <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="w-full h-9 rounded-md border border-border bg-background px-2 text-xs">
                 <option value="all">Todos os tipos</option>
                 {CATEGORY_OPTIONS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -98,7 +98,7 @@ function Alertas() {
               </select>
             </FilterField>
             <FilterField label="Severidade">
-              <select value={severity} onChange={(e) => setSeverity(e.target.value as typeof severity)} className="select">
+              <select value={severity} onChange={(e) => setSeverity(e.target.value as typeof severity)} className="w-full h-9 rounded-md border border-border bg-background px-2 text-xs">
                 <option value="all">Todas</option>
                 {SEV_OPTIONS.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -106,7 +106,7 @@ function Alertas() {
               </select>
             </FilterField>
             <FilterField label="Status">
-              <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="select">
+              <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="w-full h-9 rounded-md border border-border bg-background px-2 text-xs">
                 <option value="all">Todos</option>
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -114,7 +114,7 @@ function Alertas() {
               </select>
             </FilterField>
             <FilterField label="Imóvel">
-              <select value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="select">
+              <select value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-2 text-xs">
                 <option value="all">Todos</option>
                 {properties.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -122,7 +122,7 @@ function Alertas() {
               </select>
             </FilterField>
             <FilterField label="Período">
-              <select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className="select">
+              <select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className="w-full h-9 rounded-md border border-border bg-background px-2 text-xs">
                 {PERIOD_OPTIONS.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
