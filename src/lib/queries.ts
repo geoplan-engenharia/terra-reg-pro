@@ -878,3 +878,87 @@ export function useUpsertEnvironmentalAnalysis() {
     },
   });
 }
+
+// =====================
+// SUBSCRIPTIONS & PLANS
+// =====================
+export type SubscriptionPlan = {
+  id: string;
+  key: string;
+  name: string;
+  max_properties: number;
+  max_users: number;
+  max_licenses: number;
+  can_use_custom_rules: boolean;
+  can_use_simulated_sync: boolean;
+  can_export_reports: boolean;
+  price_monthly: number;
+  price_yearly: number;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type OrganizationSubscription = {
+  id: string;
+  organization_id: string;
+  plan_key: string;
+  billing_cycle: "mensal" | "anual";
+  status: "ativo" | "trial" | "pausado" | "cancelado" | "expirado";
+  started_at: string;
+  expires_at: string | null;
+  notes: string | null;
+};
+
+export function useSubscriptionPlans() {
+  return useQuery({
+    queryKey: ["subscription_plans"],
+    queryFn: async (): Promise<SubscriptionPlan[]> => {
+      const { data, error } = await (supabase as any)
+        .from("subscription_plans")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as SubscriptionPlan[];
+    },
+  });
+}
+
+export function useCurrentSubscription() {
+  return useQuery({
+    queryKey: ["current_subscription"],
+    queryFn: async (): Promise<{ subscription: OrganizationSubscription | null; plan: SubscriptionPlan | null }> => {
+      const { data: sub, error } = await (supabase as any)
+        .from("organization_subscriptions")
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      if (!sub) return { subscription: null, plan: null };
+      const { data: plan, error: pErr } = await (supabase as any)
+        .from("subscription_plans")
+        .select("*")
+        .eq("key", sub.plan_key)
+        .maybeSingle();
+      if (pErr) throw pErr;
+      return { subscription: sub as OrganizationSubscription, plan: (plan ?? null) as SubscriptionPlan | null };
+    },
+  });
+}
+
+export function useUsageCounts() {
+  return useQuery({
+    queryKey: ["usage_counts"],
+    queryFn: async (): Promise<{ properties: number; users: number; licenses: number }> => {
+      const [p, u, l] = await Promise.all([
+        supabase.from("rural_properties").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("environmental_licenses").select("id", { count: "exact", head: true }),
+      ]);
+      return {
+        properties: p.count ?? 0,
+        users: u.count ?? 0,
+        licenses: l.count ?? 0,
+      };
+    },
+  });
+}

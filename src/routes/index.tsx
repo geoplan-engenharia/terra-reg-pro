@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowUpRight, AlertTriangle, ShieldCheck, Map as MapIcon, Activity, TrendingUp, Eye, Bell, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — GeoTerra" }] }),
@@ -135,6 +136,8 @@ function Dashboard() {
           <KpiCard icon={ShieldCheck} label="Licenças vencendo" value={String(licencas30)} delta="Próximos 30 dias" tone="warn" />
           <KpiCard icon={Activity} label="Imóveis em risco alto" value={String(imoveisAltaSev)} delta="Diagnóstico crítico" tone="danger" />
         </div>
+
+        <SubscriptionCard />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 rounded-xl border border-border bg-card overflow-hidden">

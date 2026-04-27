@@ -501,6 +501,53 @@ export type Database = {
           },
         ]
       }
+      organization_subscriptions: {
+        Row: {
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          created_at: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          plan_key: string
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          plan_key: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          plan_key?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -907,6 +954,60 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          can_export_reports: boolean
+          can_use_custom_rules: boolean
+          can_use_simulated_sync: boolean
+          created_at: string
+          id: string
+          is_active: boolean
+          key: string
+          max_licenses: number
+          max_properties: number
+          max_users: number
+          name: string
+          price_monthly: number
+          price_yearly: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          can_export_reports?: boolean
+          can_use_custom_rules?: boolean
+          can_use_simulated_sync?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          max_licenses?: number
+          max_properties?: number
+          max_users?: number
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          can_export_reports?: boolean
+          can_use_custom_rules?: boolean
+          can_use_simulated_sync?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          max_licenses?: number
+          max_properties?: number
+          max_users?: number
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -980,6 +1081,7 @@ export type Database = {
     Enums: {
       alert_status: "novo" | "visualizado" | "resolvido"
       app_role: "admin" | "tecnico" | "financeiro" | "visualizador"
+      billing_cycle: "mensal" | "anual"
       car_status:
         | "ativo"
         | "pendente"
@@ -1022,6 +1124,12 @@ export type Database = {
         | "em_analise"
         | "nao_certificado"
         | "desconhecido"
+      subscription_status:
+        | "ativo"
+        | "trial"
+        | "pausado"
+        | "cancelado"
+        | "expirado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1151,6 +1259,7 @@ export const Constants = {
     Enums: {
       alert_status: ["novo", "visualizado", "resolvido"],
       app_role: ["admin", "tecnico", "financeiro", "visualizador"],
+      billing_cycle: ["mensal", "anual"],
       car_status: [
         "ativo",
         "pendente",
@@ -1198,6 +1307,13 @@ export const Constants = {
         "em_analise",
         "nao_certificado",
         "desconhecido",
+      ],
+      subscription_status: [
+        "ativo",
+        "trial",
+        "pausado",
+        "cancelado",
+        "expirado",
       ],
     },
   },
