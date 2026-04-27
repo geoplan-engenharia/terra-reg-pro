@@ -16,6 +16,7 @@ import { Route as MembrosRouteImport } from './routes/membros'
 import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LicencasRouteImport } from './routes/licencas'
+import { Route as LandingRouteImport } from './routes/landing'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as FontesDadosRouteImport } from './routes/fontes-dados'
 import { Route as ClientesRouteImport } from './routes/clientes'
@@ -58,6 +59,11 @@ const LicencasRoute = LicencasRouteImport.update({
   path: '/licencas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HistoricoRoute = HistoricoRouteImport.update({
   id: '/historico',
   path: '/historico',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof ClientesRoute
   '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
+  '/landing': typeof LandingRoute
   '/licencas': typeof LicencasRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof ClientesRoute
   '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
+  '/landing': typeof LandingRoute
   '/licencas': typeof LicencasRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/clientes': typeof ClientesRoute
   '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
+  '/landing': typeof LandingRoute
   '/licencas': typeof LicencasRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/fontes-dados'
     | '/historico'
+    | '/landing'
     | '/licencas'
     | '/login'
     | '/mapa'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/fontes-dados'
     | '/historico'
+    | '/landing'
     | '/licencas'
     | '/login'
     | '/mapa'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/fontes-dados'
     | '/historico'
+    | '/landing'
     | '/licencas'
     | '/login'
     | '/mapa'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   ClientesRoute: typeof ClientesRoute
   FontesDadosRoute: typeof FontesDadosRoute
   HistoricoRoute: typeof HistoricoRoute
+  LandingRoute: typeof LandingRoute
   LicencasRoute: typeof LicencasRoute
   LoginRoute: typeof LoginRoute
   MapaRoute: typeof MapaRoute
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LicencasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/historico': {
       id: '/historico'
       path: '/historico'
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesRoute: ClientesRoute,
   FontesDadosRoute: FontesDadosRoute,
   HistoricoRoute: HistoricoRoute,
+  LandingRoute: LandingRoute,
   LicencasRoute: LicencasRoute,
   LoginRoute: LoginRoute,
   MapaRoute: MapaRoute,
