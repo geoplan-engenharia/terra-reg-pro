@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RegrasDiagnosticoRouteImport } from './routes/regras-diagnostico'
+import { Route as PrecosRouteImport } from './routes/precos'
 import { Route as MonitoramentoRouteImport } from './routes/monitoramento'
 import { Route as MembrosRouteImport } from './routes/membros'
 import { Route as MapaRouteImport } from './routes/mapa'
@@ -32,6 +33,11 @@ const SignupRoute = SignupRouteImport.update({
 const RegrasDiagnosticoRoute = RegrasDiagnosticoRouteImport.update({
   id: '/regras-diagnostico',
   path: '/regras-diagnostico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrecosRoute = PrecosRouteImport.update({
+  id: '/precos',
+  path: '/precos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonitoramentoRoute = MonitoramentoRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/mapa': typeof MapaRoute
   '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/precos': typeof PrecosRoute
   '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/mapa': typeof MapaRoute
   '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/precos': typeof PrecosRoute
   '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/mapa': typeof MapaRoute
   '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/precos': typeof PrecosRoute
   '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/membros'
     | '/monitoramento'
+    | '/precos'
     | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/membros'
     | '/monitoramento'
+    | '/precos'
     | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/membros'
     | '/monitoramento'
+    | '/precos'
     | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   MapaRoute: typeof MapaRoute
   MembrosRoute: typeof MembrosRoute
   MonitoramentoRoute: typeof MonitoramentoRoute
+  PrecosRoute: typeof PrecosRoute
   RegrasDiagnosticoRoute: typeof RegrasDiagnosticoRoute
   SignupRoute: typeof SignupRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/regras-diagnostico'
       fullPath: '/regras-diagnostico'
       preLoaderRoute: typeof RegrasDiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/precos': {
+      id: '/precos'
+      path: '/precos'
+      fullPath: '/precos'
+      preLoaderRoute: typeof PrecosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/monitoramento': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapaRoute: MapaRoute,
   MembrosRoute: MembrosRoute,
   MonitoramentoRoute: MonitoramentoRoute,
+  PrecosRoute: PrecosRoute,
   RegrasDiagnosticoRoute: RegrasDiagnosticoRoute,
   SignupRoute: SignupRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
@@ -334,12 +355,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
