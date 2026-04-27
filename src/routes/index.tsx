@@ -41,6 +41,8 @@ function Dashboard() {
   const { profile, isAdmin } = useAuth();
   const props = useProperties();
   const alerts = useMonitoringAlerts();
+  const unified = useUnifiedAlerts();
+  const licenses = useLicenses();
   const qc = useQueryClient();
   const [seeding, setSeeding] = useState(false);
 
@@ -48,6 +50,20 @@ function Dashboard() {
   const totalArea = items.reduce((s, i) => s + (i.area_ha ?? 0), 0);
   const comRisco = items.filter((i) => i.car_status === "pendente" || i.sigef_status === "nao_certificado").length;
   const monitorados = items.filter((i) => i.monitorado).length;
+
+  const unifiedList = unified.data ?? [];
+  const novos = unifiedList.filter((a) => a.status === "novo").length;
+  const criticos = unifiedList.filter((a) => a.severidade === "alta" && a.status !== "resolvido").length;
+  const licencas30 = (licenses.data ?? []).filter((l) => {
+    if (!l.expiration_date) return false;
+    const dias = Math.ceil((new Date(l.expiration_date).getTime() - Date.now()) / 86400000);
+    return dias >= 0 && dias <= 30;
+  }).length;
+  const imoveisAltaSev = new Set(
+    unifiedList
+      .filter((a) => a.severidade === "alta" && a.source_table === "property_diagnostics" && a.property_id)
+      .map((a) => a.property_id!)
+  ).size;
 
   const loadDemo = async () => {
     if (!profile) return;
