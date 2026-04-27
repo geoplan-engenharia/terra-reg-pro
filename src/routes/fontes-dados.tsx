@@ -4,9 +4,10 @@ import { useAuth } from "@/lib/auth";
 import { useDataSources, useUpsertDataSource, useDeleteDataSource } from "@/lib/queries";
 import type { DataSource, DataSourceStatus } from "@/lib/types";
 import { useMemo, useState } from "react";
-import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Lock } from "lucide-react";
+import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Lock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SimulatedSyncModal } from "@/components/SimulatedSyncModal";
 
 export const Route = createFileRoute("/fontes-dados")({
   head: () => ({
