@@ -162,7 +162,7 @@ export function exportReportPDF(ctx: ReportContext): Blob {
   }
   y += 6;
 
-
+  drawSection("Diagnósticos automáticos");
   if (ctx.diagnostics.length === 0) {
     drawKV("Status", "Nenhum diagnóstico gerado");
   } else {
