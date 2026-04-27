@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
-import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry, useReprocessDiagnostics } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown, RefreshCw } from "lucide-react";
+import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry, useReprocessDiagnostics, usePropertyEnvironmentalAnalyses } from "@/lib/queries";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown, RefreshCw, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
+import { EnvironmentalAnalysisModal } from "./EnvironmentalAnalysisModal";
 
 const confiabilidadeMap: Record<Confiabilidade, { label: string; classes: string; dot: string }> = {
   alta: { label: "Alta", classes: "bg-success/15 text-success border-success/30", dot: "bg-success" },
