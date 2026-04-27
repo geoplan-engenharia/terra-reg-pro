@@ -1,11 +1,12 @@
 import { jsPDF } from "jspdf";
-import type { RuralProperty, Diagnostic } from "./types";
+import type { RuralProperty, Diagnostic, EnvironmentalAnalysis } from "./types";
 import type { PropertyGeometry } from "./queries";
 
 export interface ReportContext {
   property: RuralProperty;
   diagnostics: Diagnostic[];
   geometry: PropertyGeometry | null;
+  environmental: EnvironmentalAnalysis | null;
   organizationName: string;
   emittedBy: string;
   emittedAt: Date;
