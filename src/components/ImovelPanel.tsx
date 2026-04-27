@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
-import { useProperty, usePropertyDiagnostics, useToggleMonitor } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2 } from "lucide-react";
+import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry } from "@/lib/queries";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -50,10 +50,11 @@ const carStatusLabel: Record<string, { label: string; cls: string }> = {
   nao_cadastrado: { label: "Não cadastrado", cls: "border-muted bg-muted/30 text-muted-foreground" },
 };
 
-export function ImovelPanel({ propertyId, onClose }: { propertyId: string; onClose: () => void }) {
+export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: string; onClose: () => void; onEdit?: () => void }) {
   const { canEditProperties } = useAuth();
   const { data: imovel, isLoading } = useProperty(propertyId);
   const { data: diagnostics = [] } = usePropertyDiagnostics(propertyId);
+  const { data: geometry } = usePropertyGeometry(propertyId);
   const toggleMonitor = useToggleMonitor();
 
   const sortedDiag = useMemo(() => {
