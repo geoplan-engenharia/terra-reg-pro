@@ -27,7 +27,7 @@ interface AuthState {
   canEditClients: boolean;
   canEditLicenses: boolean;
   isAdmin: boolean;
-}
+  isSuperAdmin: boolean;
 
 const Ctx = createContext<AuthState | null>(null);
 
