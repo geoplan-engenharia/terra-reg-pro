@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
-import { useProperties, useMonitoringAlerts } from "@/lib/queries";
+import { useProperties, useMonitoringAlerts, useUnifiedAlerts, useLicenses } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { seedDemoData } from "@/lib/seed-demo";
 import { useQueryClient } from "@tanstack/react-query";
