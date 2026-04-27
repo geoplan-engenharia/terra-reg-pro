@@ -57,6 +57,7 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
   const { data: diagnostics = [] } = usePropertyDiagnostics(propertyId);
   const { data: geometry } = usePropertyGeometry(propertyId);
   const toggleMonitor = useToggleMonitor();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const sortedDiag = useMemo(() => {
     const order: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
