@@ -6,7 +6,8 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Criar conta — GeoTerra" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({ invite: typeof s.invite === "string" ? s.invite : undefined }),
+  validateSearch: (s: Record<string, unknown>): { invite?: string } =>
+    typeof s.invite === "string" ? { invite: s.invite } : {},
   component: SignupPage,
 });
 
