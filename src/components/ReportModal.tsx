@@ -54,6 +54,8 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
   const { data: property, isLoading: lp } = useProperty(propertyId);
   const { data: diagnostics = [], isLoading: ld } = usePropertyDiagnostics(propertyId);
   const { data: geometry } = usePropertyGeometry(propertyId);
+  const { data: envHistory = [] } = usePropertyEnvironmentalAnalyses(propertyId);
+  const environmental = envHistory[0] ?? null;
   const logConsult = useLogConsultation();
   const [exporting, setExporting] = useState(false);
   const emittedAt = useMemo(() => new Date(), []);
@@ -66,6 +68,7 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
         property,
         diagnostics,
         geometry: geometry ?? null,
+        environmental,
         organizationName: profile.organization_name,
         emittedBy: profile.full_name ?? profile.email ?? "Usuário",
         emittedAt,
