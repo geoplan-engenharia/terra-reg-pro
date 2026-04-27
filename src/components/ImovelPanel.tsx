@@ -85,6 +85,15 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
     }
   };
 
+  const handleReprocess = async () => {
+    try {
+      await reprocess.mutateAsync(imovel.id);
+      toast.success("Diagnósticos reprocessados");
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
   return (
     <aside className="absolute top-0 right-0 h-full w-full sm:w-[420px] bg-card border-l border-border shadow-panel z-[1000] flex flex-col animate-in slide-in-from-right duration-300">
       <div className="relative bg-gradient-surface border-b border-border px-5 py-4">
