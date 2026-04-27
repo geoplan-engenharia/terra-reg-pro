@@ -14,14 +14,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const items = [
+const items: ReadonlyArray<{ to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean }> = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/admin/organizacoes", icon: Building2, label: "Organizações" },
   { to: "/admin/usuarios", icon: Users, label: "Usuários" },
   { to: "/admin/planos", icon: Tag, label: "Planos" },
   { to: "/admin/financeiro", icon: DollarSign, label: "Financeiro" },
   { to: "/admin/bugs", icon: Bug, label: "Bugs / Suporte" },
-] as const;
+];
 
 export function AdminLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   const { session, loading, isSuperAdmin, profile } = useAuth();
