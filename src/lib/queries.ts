@@ -347,15 +347,17 @@ export function useUpsertDiagnosticRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: Partial<DiagnosticRule> & { name: string; key: string; category: string; report_message: string; organization_id?: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = supabase as any;
       if (input.id) {
         const { id, created_at: _c, updated_at: _u, ...patch } = input;
-        const { data, error } = await supabase.from("diagnostic_rules").update(patch).eq("id", id).select().single();
+        const { data, error } = await client.from("diagnostic_rules").update(patch).eq("id", id).select().single();
         if (error) throw error;
-        return data as unknown as DiagnosticRule;
+        return data as DiagnosticRule;
       }
-      const { data, error } = await supabase.from("diagnostic_rules").insert(input).select().single();
+      const { data, error } = await client.from("diagnostic_rules").insert(input).select().single();
       if (error) throw error;
-      return data as unknown as DiagnosticRule;
+      return data as DiagnosticRule;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["diagnostic_rules"] }),
   });
