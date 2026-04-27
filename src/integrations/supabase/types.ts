@@ -119,7 +119,12 @@ export type Database = {
           endpoint_url: string | null
           id: string
           key: string
+          last_sync_at: string | null
           name: string
+          source_type: string | null
+          status: Database["public"]["Enums"]["data_source_status"]
+          update_frequency: string | null
+          updated_at: string
         }
         Insert: {
           category?: string | null
@@ -130,7 +135,12 @@ export type Database = {
           endpoint_url?: string | null
           id?: string
           key: string
+          last_sync_at?: string | null
           name: string
+          source_type?: string | null
+          status?: Database["public"]["Enums"]["data_source_status"]
+          update_frequency?: string | null
+          updated_at?: string
         }
         Update: {
           category?: string | null
@@ -141,7 +151,12 @@ export type Database = {
           endpoint_url?: string | null
           id?: string
           key?: string
+          last_sync_at?: string | null
           name?: string
+          source_type?: string | null
+          status?: Database["public"]["Enums"]["data_source_status"]
+          update_frequency?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -816,6 +831,7 @@ export type Database = {
         | "suspenso"
         | "nao_cadastrado"
       confiabilidade: "alta" | "media" | "baixa"
+      data_source_status: "planejada" | "ativa" | "instavel" | "indisponivel"
       diagnostic_kind:
         | "regular"
         | "irregularidade_ambiental"
@@ -982,6 +998,7 @@ export const Constants = {
         "nao_cadastrado",
       ],
       confiabilidade: ["alta", "media", "baixa"],
+      data_source_status: ["planejada", "ativa", "instavel", "indisponivel"],
       diagnostic_kind: [
         "regular",
         "irregularidade_ambiental",
