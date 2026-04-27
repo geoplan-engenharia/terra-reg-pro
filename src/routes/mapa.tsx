@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
-import { MapaInterativo } from "@/components/MapaInterativo";
+import { MapaClient } from "@/components/MapaClient";
 
 export const Route = createFileRoute("/mapa")({
   head: () => ({
@@ -16,7 +16,7 @@ function MapaPage() {
   return (
     <AppLayout title="Mapa Interativo" subtitle="Clique em um imóvel para ver o relatório completo">
       <div className="h-[calc(100vh-4rem)] relative">
-        <MapaInterativo />
+        <MapaClient />
       </div>
     </AppLayout>
   );
