@@ -4,7 +4,9 @@ import L from "leaflet";
 import { useProperties } from "@/lib/queries";
 import type { RuralProperty } from "@/lib/types";
 import { ImovelPanel } from "./ImovelPanel";
-import { Layers, ChevronRight, Search, Loader2 } from "lucide-react";
+import { PropertyForm } from "./PropertyForm";
+import { useAuth } from "@/lib/auth";
+import { Layers, ChevronRight, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -40,11 +42,16 @@ function colorForProperty(p: RuralProperty): string {
 }
 
 export function MapaInterativo() {
+  const { canEditProperties } = useAuth();
   const { data: properties = [], isLoading } = useProperties();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [camadas, setCamadas] = useState<Camada[]>(camadasIniciais);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
   const [busca, setBusca] = useState("");
+  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
+  const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
+
+  const selected = useMemo(() => properties.find((p) => p.id === selectedId) ?? null, [properties, selectedId]);
 
   const georef = useMemo(
     () => properties.filter((p) => p.centroid_lat != null && p.centroid_lng != null),
