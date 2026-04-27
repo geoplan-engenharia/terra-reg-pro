@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { X, FileDown, Loader2, ShieldCheck, AlertTriangle, MapPin, FileText, Hash, FileJson } from "lucide-react";
+import { X, FileDown, Loader2, ShieldCheck, AlertTriangle, MapPin, FileText, Hash, FileJson, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { useProperty, usePropertyDiagnostics, usePropertyGeometry } from "@/lib/queries";
+import { useProperty, usePropertyDiagnostics, usePropertyGeometry, usePropertyEnvironmentalAnalyses } from "@/lib/queries";
 import { useLogConsultation } from "@/lib/history";
 import { buildReportSummary, downloadBlob, exportReportPDF, reportFilename } from "@/lib/report";
 import { toast } from "sonner";
