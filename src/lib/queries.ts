@@ -177,7 +177,7 @@ export function usePropertyGeometry(propertyId: string | null) {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return (data ?? null) as PropertyGeometry | null;
+      return (data ?? null) as unknown as PropertyGeometry | null;
     },
   });
 }
@@ -205,7 +205,7 @@ export function useUpsertGeometry() {
       };
       const { data, error } = await supabase.from("property_geometries").insert(payload).select().single();
       if (error) throw error;
-      return data as PropertyGeometry;
+      return data as unknown as PropertyGeometry;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["geometry", vars.property_id] });
