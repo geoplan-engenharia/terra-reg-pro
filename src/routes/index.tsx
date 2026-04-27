@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { useProperties, useMonitoringAlerts, useUnifiedAlerts, useLicenses } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
@@ -11,8 +11,21 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — GeoTerra" }] }),
-  component: Dashboard,
+  component: RootGate,
 });
+
+function RootGate() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/landing" />;
+  return <Dashboard />;
+}
 
 function KpiCard({ icon: Icon, label, value, delta, tone = "primary" }: { icon: React.ElementType; label: string; value: string; delta?: string; tone?: "primary" | "warn" | "danger" | "info" }) {
   const tones = {
