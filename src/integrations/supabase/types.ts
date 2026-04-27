@@ -14,16 +14,837 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultation_history: {
+        Row: {
+          created_at: string
+          data_source_key: string | null
+          id: string
+          organization_id: string
+          property_id: string | null
+          query_params: Json | null
+          result_summary: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_source_key?: string | null
+          id?: string
+          organization_id: string
+          property_id?: string | null
+          query_params?: Json | null
+          result_summary?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_source_key?: string | null
+          id?: string
+          organization_id?: string
+          property_id?: string | null
+          query_params?: Json | null
+          result_summary?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_sources: {
+        Row: {
+          category: string | null
+          config: Json | null
+          created_at: string
+          description: string | null
+          enabled: boolean
+          endpoint_url: string | null
+          id: string
+          key: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          endpoint_url?: string | null
+          id?: string
+          key: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          endpoint_url?: string | null
+          id?: string
+          key?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      environmental_analysis: {
+        Row: {
+          analyzed_at: string
+          desmatamento_area_ha: number | null
+          embargo_area_ha: number | null
+          has_app_violation: boolean | null
+          has_desmatamento: boolean | null
+          has_embargo: boolean | null
+          has_reserva_legal_deficit: boolean | null
+          id: string
+          organization_id: string
+          property_id: string
+          raw_payload: Json | null
+        }
+        Insert: {
+          analyzed_at?: string
+          desmatamento_area_ha?: number | null
+          embargo_area_ha?: number | null
+          has_app_violation?: boolean | null
+          has_desmatamento?: boolean | null
+          has_embargo?: boolean | null
+          has_reserva_legal_deficit?: boolean | null
+          id?: string
+          organization_id: string
+          property_id: string
+          raw_payload?: Json | null
+        }
+        Update: {
+          analyzed_at?: string
+          desmatamento_area_ha?: number | null
+          embargo_area_ha?: number | null
+          has_app_violation?: boolean | null
+          has_desmatamento?: boolean | null
+          has_embargo?: boolean | null
+          has_reserva_legal_deficit?: boolean | null
+          id?: string
+          organization_id?: string
+          property_id?: string
+          raw_payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environmental_analysis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environmental_analysis_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      environmental_licenses: {
+        Row: {
+          attachment_url: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          expiration_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_body: string | null
+          license_number: string | null
+          license_type: string
+          licensed_activity: string | null
+          notes: string | null
+          organization_id: string
+          property_id: string | null
+          status: Database["public"]["Enums"]["license_status"]
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_body?: string | null
+          license_number?: string | null
+          license_type: string
+          licensed_activity?: string | null
+          notes?: string | null
+          organization_id: string
+          property_id?: string | null
+          status?: Database["public"]["Enums"]["license_status"]
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_body?: string | null
+          license_number?: string | null
+          license_type?: string
+          licensed_activity?: string | null
+          notes?: string | null
+          organization_id?: string
+          property_id?: string | null
+          status?: Database["public"]["Enums"]["license_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environmental_licenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environmental_licenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environmental_licenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_alerts: {
+        Row: {
+          id: string
+          kind: Database["public"]["Enums"]["license_alert_kind"]
+          license_id: string
+          organization_id: string
+          status: Database["public"]["Enums"]["alert_status"]
+          triggered_at: string
+        }
+        Insert: {
+          id?: string
+          kind: Database["public"]["Enums"]["license_alert_kind"]
+          license_id: string
+          organization_id: string
+          status?: Database["public"]["Enums"]["alert_status"]
+          triggered_at?: string
+        }
+        Update: {
+          id?: string
+          kind?: Database["public"]["Enums"]["license_alert_kind"]
+          license_id?: string
+          organization_id?: string
+          status?: Database["public"]["Enums"]["alert_status"]
+          triggered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_alerts_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "environmental_licenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monitoring_alerts: {
+        Row: {
+          alert_date: string
+          alert_type: string
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          property_id: string
+          resolved_at: string | null
+          severidade: Database["public"]["Enums"]["severidade"]
+          source: string | null
+          status: Database["public"]["Enums"]["alert_status"]
+          title: string
+        }
+        Insert: {
+          alert_date?: string
+          alert_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          property_id: string
+          resolved_at?: string | null
+          severidade?: Database["public"]["Enums"]["severidade"]
+          source?: string | null
+          status?: Database["public"]["Enums"]["alert_status"]
+          title: string
+        }
+        Update: {
+          alert_date?: string
+          alert_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          property_id?: string
+          resolved_at?: string | null
+          severidade?: Database["public"]["Enums"]["severidade"]
+          source?: string | null
+          status?: Database["public"]["Enums"]["alert_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitoring_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monitoring_alerts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: Database["public"]["Enums"]["invite_status"]
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          organization_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_diagnostics: {
+        Row: {
+          description: string | null
+          generated_at: string
+          id: string
+          kind: Database["public"]["Enums"]["diagnostic_kind"]
+          organization_id: string
+          property_id: string
+          rule_key: string | null
+          severidade: Database["public"]["Enums"]["severidade"]
+          title: string
+        }
+        Insert: {
+          description?: string | null
+          generated_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["diagnostic_kind"]
+          organization_id: string
+          property_id: string
+          rule_key?: string | null
+          severidade?: Database["public"]["Enums"]["severidade"]
+          title: string
+        }
+        Update: {
+          description?: string | null
+          generated_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["diagnostic_kind"]
+          organization_id?: string
+          property_id?: string
+          rule_key?: string | null
+          severidade?: Database["public"]["Enums"]["severidade"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_diagnostics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_diagnostics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_geometries: {
+        Row: {
+          bbox: Json | null
+          created_at: string
+          geojson: Json
+          id: string
+          organization_id: string
+          property_id: string
+          source: string | null
+        }
+        Insert: {
+          bbox?: Json | null
+          created_at?: string
+          geojson: Json
+          id?: string
+          organization_id: string
+          property_id: string
+          source?: string | null
+        }
+        Update: {
+          bbox?: Json | null
+          created_at?: string
+          geojson?: Json
+          id?: string
+          organization_id?: string
+          property_id?: string
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_geometries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_geometries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_registry_data: {
+        Row: {
+          cartorio_name: string | null
+          created_at: string
+          data_emissao: string | null
+          folha: string | null
+          id: string
+          livro: string | null
+          matricula_number: string | null
+          observacoes: string | null
+          organization_id: string
+          property_id: string
+          raw_payload: Json | null
+        }
+        Insert: {
+          cartorio_name?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          folha?: string | null
+          id?: string
+          livro?: string | null
+          matricula_number?: string | null
+          observacoes?: string | null
+          organization_id: string
+          property_id: string
+          raw_payload?: Json | null
+        }
+        Update: {
+          cartorio_name?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          folha?: string | null
+          id?: string
+          livro?: string | null
+          matricula_number?: string | null
+          observacoes?: string | null
+          organization_id?: string
+          property_id?: string
+          raw_payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_registry_data_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_registry_data_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rural_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rural_properties: {
+        Row: {
+          area_ha: number | null
+          car_code: string | null
+          car_status: Database["public"]["Enums"]["car_status"] | null
+          centroid_lat: number | null
+          centroid_lng: number | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_consultation_at: string | null
+          matricula_confiabilidade:
+            | Database["public"]["Enums"]["confiabilidade"]
+            | null
+          matricula_number: string | null
+          matricula_source:
+            | Database["public"]["Enums"]["matricula_source"]
+            | null
+          monitorado: boolean
+          municipio: string | null
+          name: string
+          notes: string | null
+          organization_id: string
+          owner_name: string | null
+          sigef_status: Database["public"]["Enums"]["sigef_status"] | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          area_ha?: number | null
+          car_code?: string | null
+          car_status?: Database["public"]["Enums"]["car_status"] | null
+          centroid_lat?: number | null
+          centroid_lng?: number | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_consultation_at?: string | null
+          matricula_confiabilidade?:
+            | Database["public"]["Enums"]["confiabilidade"]
+            | null
+          matricula_number?: string | null
+          matricula_source?:
+            | Database["public"]["Enums"]["matricula_source"]
+            | null
+          monitorado?: boolean
+          municipio?: string | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          owner_name?: string | null
+          sigef_status?: Database["public"]["Enums"]["sigef_status"] | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area_ha?: number | null
+          car_code?: string | null
+          car_status?: Database["public"]["Enums"]["car_status"] | null
+          centroid_lat?: number | null
+          centroid_lng?: number | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_consultation_at?: string | null
+          matricula_confiabilidade?:
+            | Database["public"]["Enums"]["confiabilidade"]
+            | null
+          matricula_number?: string | null
+          matricula_source?:
+            | Database["public"]["Enums"]["matricula_source"]
+            | null
+          monitorado?: boolean
+          municipio?: string | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          owner_name?: string | null
+          sigef_status?: Database["public"]["Enums"]["sigef_status"] | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rural_properties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rural_properties_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_org_id: { Args: never; Returns: string }
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      refresh_license_alerts: {
+        Args: { _license_id: string }
+        Returns: undefined
+      }
+      run_property_diagnostics: {
+        Args: { _property_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      alert_status: "novo" | "visualizado" | "resolvido"
+      app_role: "admin" | "tecnico" | "financeiro" | "visualizador"
+      car_status:
+        | "ativo"
+        | "pendente"
+        | "cancelado"
+        | "suspenso"
+        | "nao_cadastrado"
+      confiabilidade: "alta" | "media" | "baixa"
+      diagnostic_kind:
+        | "regular"
+        | "irregularidade_ambiental"
+        | "sem_certificacao"
+        | "embargo"
+        | "desmatamento"
+        | "sobreposicao"
+        | "documental"
+        | "outro"
+      invite_status: "pendente" | "aceito" | "expirado" | "revogado"
+      license_alert_kind: "180_dias" | "90_dias" | "30_dias" | "vencida"
+      license_status:
+        | "ativa"
+        | "vencida"
+        | "em_renovacao"
+        | "suspensa"
+        | "cancelada"
+      matricula_source:
+        | "cartorio"
+        | "sigef"
+        | "car"
+        | "declarado"
+        | "desconhecida"
+      severidade: "alta" | "media" | "baixa"
+      sigef_status:
+        | "certificado"
+        | "em_analise"
+        | "nao_certificado"
+        | "desconhecido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +971,50 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_status: ["novo", "visualizado", "resolvido"],
+      app_role: ["admin", "tecnico", "financeiro", "visualizador"],
+      car_status: [
+        "ativo",
+        "pendente",
+        "cancelado",
+        "suspenso",
+        "nao_cadastrado",
+      ],
+      confiabilidade: ["alta", "media", "baixa"],
+      diagnostic_kind: [
+        "regular",
+        "irregularidade_ambiental",
+        "sem_certificacao",
+        "embargo",
+        "desmatamento",
+        "sobreposicao",
+        "documental",
+        "outro",
+      ],
+      invite_status: ["pendente", "aceito", "expirado", "revogado"],
+      license_alert_kind: ["180_dias", "90_dias", "30_dias", "vencida"],
+      license_status: [
+        "ativa",
+        "vencida",
+        "em_renovacao",
+        "suspensa",
+        "cancelada",
+      ],
+      matricula_source: [
+        "cartorio",
+        "sigef",
+        "car",
+        "declarado",
+        "desconhecida",
+      ],
+      severidade: ["alta", "media", "baixa"],
+      sigef_status: [
+        "certificado",
+        "em_analise",
+        "nao_certificado",
+        "desconhecido",
+      ],
+    },
   },
 } as const
