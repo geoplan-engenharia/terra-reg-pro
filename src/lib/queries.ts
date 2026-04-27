@@ -724,7 +724,7 @@ export function useRunSimulatedSync() {
     mutationFn: async (input: { dataSourceKey: string; propertyId?: string | null }) => {
       const { data, error } = await supabase.rpc("run_simulated_sync", {
         _data_source_key: input.dataSourceKey,
-        _property_id: input.propertyId ?? null,
+        _property_id: input.propertyId ?? undefined,
       });
       if (error) throw error;
       return data as string; // run_id
