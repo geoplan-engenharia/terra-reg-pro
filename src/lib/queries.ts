@@ -155,7 +155,7 @@ export function useUpdateAlertStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "novo" | "visualizado" | "resolvido" }) => {
-      const patch: Record<string, unknown> = { status };
+      const patch: { status: typeof status; resolved_at?: string } = { status };
       if (status === "resolvido") patch.resolved_at = new Date().toISOString();
       const { error } = await supabase.from("monitoring_alerts").update(patch).eq("id", id);
       if (error) throw error;
