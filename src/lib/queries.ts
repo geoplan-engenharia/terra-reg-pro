@@ -413,12 +413,15 @@ export function useUpdateUnifiedAlertStatus() {
         // diagnostics have no status column — no-op
         return;
       }
-      const patch: { status: UnifiedAlertStatus; resolved_at?: string } = { status };
-      if (source_table === "monitoring_alerts" && status === "resolvido") {
-        patch.resolved_at = new Date().toISOString();
+      if (source_table === "monitoring_alerts") {
+        const patch: { status: UnifiedAlertStatus; resolved_at?: string } = { status };
+        if (status === "resolvido") patch.resolved_at = new Date().toISOString();
+        const { error } = await supabase.from("monitoring_alerts").update(patch).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("license_alerts").update({ status }).eq("id", id);
+        if (error) throw error;
       }
-      const { error } = await supabase.from(source_table).update(patch).eq("id", id);
-      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["unified_alerts"] });
