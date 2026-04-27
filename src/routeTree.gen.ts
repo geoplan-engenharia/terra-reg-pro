@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as MonitoramentoRouteImport } from './routes/monitoramento'
+import { Route as MembrosRouteImport } from './routes/membros'
 import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LicencasRouteImport } from './routes/licencas'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -26,6 +28,11 @@ const SignupRoute = SignupRouteImport.update({
 const MonitoramentoRoute = MonitoramentoRouteImport.update({
   id: '/monitoramento',
   path: '/monitoramento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MembrosRoute = MembrosRouteImport.update({
+  id: '/membros',
+  path: '/membros',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapaRoute = MapaRouteImport.update({
@@ -58,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
+  id: '/accept-invite/$token',
+  path: '/accept-invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,8 +78,10 @@ export interface FileRoutesByFullPath {
   '/licencas': typeof LicencasRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
+  '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
   '/signup': typeof SignupRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,8 +90,10 @@ export interface FileRoutesByTo {
   '/licencas': typeof LicencasRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
+  '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
   '/signup': typeof SignupRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,8 +103,10 @@ export interface FileRoutesById {
   '/licencas': typeof LicencasRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
+  '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
   '/signup': typeof SignupRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,8 +117,10 @@ export interface FileRouteTypes {
     | '/licencas'
     | '/login'
     | '/mapa'
+    | '/membros'
     | '/monitoramento'
     | '/signup'
+    | '/accept-invite/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,8 +129,10 @@ export interface FileRouteTypes {
     | '/licencas'
     | '/login'
     | '/mapa'
+    | '/membros'
     | '/monitoramento'
     | '/signup'
+    | '/accept-invite/$token'
   id:
     | '__root__'
     | '/'
@@ -119,8 +141,10 @@ export interface FileRouteTypes {
     | '/licencas'
     | '/login'
     | '/mapa'
+    | '/membros'
     | '/monitoramento'
     | '/signup'
+    | '/accept-invite/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -130,8 +154,10 @@ export interface RootRouteChildren {
   LicencasRoute: typeof LicencasRoute
   LoginRoute: typeof LoginRoute
   MapaRoute: typeof MapaRoute
+  MembrosRoute: typeof MembrosRoute
   MonitoramentoRoute: typeof MonitoramentoRoute
   SignupRoute: typeof SignupRoute
+  AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -148,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/monitoramento'
       fullPath: '/monitoramento'
       preLoaderRoute: typeof MonitoramentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/membros': {
+      id: '/membros'
+      path: '/membros'
+      fullPath: '/membros'
+      preLoaderRoute: typeof MembrosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mapa': {
@@ -192,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accept-invite/$token': {
+      id: '/accept-invite/$token'
+      path: '/accept-invite/$token'
+      fullPath: '/accept-invite/$token'
+      preLoaderRoute: typeof AcceptInviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -202,8 +242,10 @@ const rootRouteChildren: RootRouteChildren = {
   LicencasRoute: LicencasRoute,
   LoginRoute: LoginRoute,
   MapaRoute: MapaRoute,
+  MembrosRoute: MembrosRoute,
   MonitoramentoRoute: MonitoramentoRoute,
   SignupRoute: SignupRoute,
+  AcceptInviteTokenRoute: AcceptInviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
