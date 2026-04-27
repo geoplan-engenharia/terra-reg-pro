@@ -123,7 +123,7 @@ function RulesPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="Regras de Diagnóstico" subtitle="Configuração das regras técnicas que geram diagnósticos automáticos">
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <header className="flex items-start justify-between gap-4">
           <div>
