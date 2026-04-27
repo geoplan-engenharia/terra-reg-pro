@@ -294,3 +294,32 @@ export function useDataSources() {
     },
   });
 }
+
+export function useUpsertDataSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<DataSource> & { key: string; name: string }) => {
+      if (input.id) {
+        const { id, ...patch } = input;
+        const { data, error } = await supabase.from("data_sources").update(patch).eq("id", id).select().single();
+        if (error) throw error;
+        return data as DataSource;
+      }
+      const { data, error } = await supabase.from("data_sources").insert(input).select().single();
+      if (error) throw error;
+      return data as DataSource;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["data_sources"] }),
+  });
+}
+
+export function useDeleteDataSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("data_sources").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["data_sources"] }),
+  });
+}

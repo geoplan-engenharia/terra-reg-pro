@@ -93,11 +93,20 @@ export interface EnvironmentalLicense {
   notes: string | null;
 }
 
+export type DataSourceStatus = "planejada" | "ativa" | "instavel" | "indisponivel";
+
 export interface DataSource {
   id: string;
   key: string;
   name: string;
   description: string | null;
   category: string | null;
+  source_type: string | null;
+  endpoint_url: string | null;
+  update_frequency: string | null;
+  last_sync_at: string | null;
+  status: DataSourceStatus;
   enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
