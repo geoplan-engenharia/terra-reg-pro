@@ -230,6 +230,7 @@ export function PropertyForm({ mode, property, onClose, onSaved }: Props) {
       <form onSubmit={submit} className="flex flex-col max-h-[calc(90vh-3.5rem)]">
         <div className="overflow-auto px-6 py-5 space-y-6">
           {mode === "create" && <PlanLimitNotice resource="properties" />}
+          {/* Identificação */}
 
           <Section title="Identificação">
             <div className="grid grid-cols-2 gap-3">
