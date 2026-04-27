@@ -64,13 +64,15 @@ const emptyForm: FormState = {
 };
 
 function DataSourcesPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
+  const canRunSync = isAdmin || role === "tecnico";
   const { data: sources = [], isLoading } = useDataSources();
   const upsert = useUpsertDataSource();
   const remove = useDeleteDataSource();
 
   const [editing, setEditing] = useState<FormState | null>(null);
   const [statusFilter, setStatusFilter] = useState<DataSourceStatus | "all">("all");
+  const [simSource, setSimSource] = useState<DataSource | null>(null);
 
   const filtered = useMemo(
     () => (statusFilter === "all" ? sources : sources.filter((s) => s.status === statusFilter)),
