@@ -256,9 +256,11 @@ function DataSourcesPage() {
                   <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
                     <button
                       onClick={() => handleSync(s)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
+                      disabled={!canRunSync}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={canRunSync ? "Executar sincronização simulada" : "Apenas admin/técnico"}
                     >
-                      <RefreshCw className="h-3.5 w-3.5" /> Sincronizar agora
+                      <Sparkles className="h-3.5 w-3.5" /> Sincronização simulada
                     </button>
                     {isAdmin && (
                       <>
