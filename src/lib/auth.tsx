@@ -11,6 +11,7 @@ export interface ProfileInfo {
   email: string | null;
   organization_name: string;
   roles: AppRole[];
+  is_super_admin: boolean;
 }
 
 interface AuthState {
@@ -26,14 +27,14 @@ interface AuthState {
   canEditClients: boolean;
   canEditLicenses: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
-
 const Ctx = createContext<AuthState | null>(null);
 
 async function loadProfile(userId: string): Promise<ProfileInfo | null> {
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, organization_id, full_name, email, organizations(name)")
+    .select("id, organization_id, full_name, email, is_super_admin, organizations(name)")
     .eq("id", userId)
     .maybeSingle();
   if (error || !profile) return null;
@@ -50,6 +51,7 @@ async function loadProfile(userId: string): Promise<ProfileInfo | null> {
     email: profile.email,
     organization_name: (profile.organizations as { name: string } | null)?.name ?? "Organização",
     roles: (roleRows ?? []).map((r) => r.role as AppRole),
+    is_super_admin: Boolean((profile as { is_super_admin?: boolean }).is_super_admin),
   };
 }
 
@@ -102,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasRole,
     hasAnyRole,
     isAdmin,
+    isSuperAdmin: profile?.is_super_admin ?? false,
     canEditProperties: hasAnyRole(["admin", "tecnico"]),
     canEditClients: hasAnyRole(["admin", "tecnico", "financeiro"]),
     canEditLicenses: hasAnyRole(["admin", "tecnico", "financeiro"]),

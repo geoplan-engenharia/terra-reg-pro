@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Map, Eye, FileCheck2, Users, Bell, Leaf, UserCog, History, Database, Sliders, Settings } from "lucide-react";
+import { LayoutDashboard, Map, Eye, FileCheck2, Users, Bell, Leaf, UserCog, History, Database, Sliders, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -18,7 +18,7 @@ const items = [
 
 export function AppSidebar() {
   const { pathname } = useLocation();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, isSuperAdmin, profile } = useAuth();
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2 px-5 border-b border-sidebar-border">
@@ -62,6 +62,20 @@ export function AppSidebar() {
           >
             <UserCog className="h-4 w-4" />
             Membros
+          </Link>
+        )}
+        {isSuperAdmin && (
+          <Link
+            to="/admin"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors mt-2 border border-destructive/30 bg-destructive/5",
+              pathname.startsWith("/admin")
+                ? "text-destructive font-medium"
+                : "text-destructive/80 hover:bg-destructive/10"
+            )}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Admin Plataforma
           </Link>
         )}
       </nav>

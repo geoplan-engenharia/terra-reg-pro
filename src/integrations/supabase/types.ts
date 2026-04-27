@@ -579,6 +579,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_super_admin: boolean
           organization_id: string
           updated_at: string
         }
@@ -588,6 +589,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_super_admin?: boolean
           organization_id: string
           updated_at?: string
         }
@@ -597,6 +599,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_super_admin?: boolean
           organization_id?: string
           updated_at?: string
         }
@@ -1008,6 +1011,45 @@ export type Database = {
         }
         Relationships: []
       }
+      support_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string | null
+          priority: string
+          report_type: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          priority?: string
+          report_type?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          priority?: string
+          report_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1045,6 +1087,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_organization_details: { Args: { _org_id: string }; Returns: Json }
+      admin_organizations_overview: {
+        Args: never
+        Returns: {
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          created_at: string
+          expires_at: string
+          id: string
+          licenses_count: number
+          name: string
+          plan_key: string
+          properties_count: number
+          slug: string
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
+          users_count: number
+        }[]
+      }
+      admin_platform_overview: { Args: never; Returns: Json }
+      admin_users_overview: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_super_admin: boolean
+          organization_id: string
+          organization_name: string
+          roles: string[]
+        }[]
+      }
       current_org_id: { Args: never; Returns: string }
       has_any_role: {
         Args: {
@@ -1061,6 +1134,7 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
       refresh_license_alerts: {
         Args: { _license_id: string }
         Returns: undefined
