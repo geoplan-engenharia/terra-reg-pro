@@ -34,7 +34,7 @@ const Ctx = createContext<AuthState | null>(null);
 async function loadProfile(userId: string): Promise<ProfileInfo | null> {
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, organization_id, full_name, email, organizations(name)")
+    .select("id, organization_id, full_name, email, is_super_admin, organizations(name)")
     .eq("id", userId)
     .maybeSingle();
   if (error || !profile) return null;
@@ -51,6 +51,7 @@ async function loadProfile(userId: string): Promise<ProfileInfo | null> {
     email: profile.email,
     organization_name: (profile.organizations as { name: string } | null)?.name ?? "Organização",
     roles: (roleRows ?? []).map((r) => r.role as AppRole),
+    is_super_admin: Boolean((profile as { is_super_admin?: boolean }).is_super_admin),
   };
 }
 
