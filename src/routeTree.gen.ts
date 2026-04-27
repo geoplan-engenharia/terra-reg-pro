@@ -28,6 +28,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminOrganizacoesRouteImport } from './routes/admin.organizacoes'
+import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
+import { Route as AdminBugsRouteImport } from './routes/admin.bugs'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 
 const SignupRoute = SignupRouteImport.update({
@@ -125,6 +127,16 @@ const AdminOrganizacoesRoute = AdminOrganizacoesRouteImport.update({
   path: '/organizacoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBugsRoute = AdminBugsRouteImport.update({
+  id: '/bugs',
+  path: '/bugs',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
   id: '/accept-invite/$token',
   path: '/accept-invite/$token',
@@ -149,6 +161,8 @@ export interface FileRoutesByFullPath {
   '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
+  '/admin/bugs': typeof AdminBugsRoute
+  '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -171,6 +185,8 @@ export interface FileRoutesByTo {
   '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
+  '/admin/bugs': typeof AdminBugsRoute
+  '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -194,6 +210,8 @@ export interface FileRoutesById {
   '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
+  '/admin/bugs': typeof AdminBugsRoute
+  '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -218,6 +236,8 @@ export interface FileRouteTypes {
     | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
+    | '/admin/bugs'
+    | '/admin/financeiro'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -240,6 +260,8 @@ export interface FileRouteTypes {
     | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
+    | '/admin/bugs'
+    | '/admin/financeiro'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -262,6 +284,8 @@ export interface FileRouteTypes {
     | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
+    | '/admin/bugs'
+    | '/admin/financeiro'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -422,6 +446,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrganizacoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/financeiro': {
+      id: '/admin/financeiro'
+      path: '/financeiro'
+      fullPath: '/admin/financeiro'
+      preLoaderRoute: typeof AdminFinanceiroRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bugs': {
+      id: '/admin/bugs'
+      path: '/bugs'
+      fullPath: '/admin/bugs'
+      preLoaderRoute: typeof AdminBugsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/accept-invite/$token': {
       id: '/accept-invite/$token'
       path: '/accept-invite/$token'
@@ -433,12 +471,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBugsRoute: typeof AdminBugsRoute
+  AdminFinanceiroRoute: typeof AdminFinanceiroRoute
   AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBugsRoute: AdminBugsRoute,
+  AdminFinanceiroRoute: AdminFinanceiroRoute,
   AdminOrganizacoesRoute: AdminOrganizacoesRoute,
   AdminPlanosRoute: AdminPlanosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
