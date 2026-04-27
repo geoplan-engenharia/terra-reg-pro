@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
-import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown } from "lucide-react";
+import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry, useReprocessDiagnostics } from "@/lib/queries";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
   const { data: diagnostics = [] } = usePropertyDiagnostics(propertyId);
   const { data: geometry } = usePropertyGeometry(propertyId);
   const toggleMonitor = useToggleMonitor();
+  const reprocess = useReprocessDiagnostics();
   const [reportOpen, setReportOpen] = useState(false);
 
   const sortedDiag = useMemo(() => {
@@ -79,6 +80,15 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
     try {
       await toggleMonitor.mutateAsync({ id: imovel.id, monitorado: !imovel.monitorado });
       toast.success(imovel.monitorado ? "Monitoramento desativado" : "Imóvel agora está sendo monitorado");
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleReprocess = async () => {
+    try {
+      await reprocess.mutateAsync(imovel.id);
+      toast.success("Diagnósticos reprocessados");
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -124,9 +134,21 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
 
       <div className="flex-1 overflow-auto">
         <Section title="Diagnóstico automático" icon={Activity}>
+          {canEditProperties && (
+            <div className="mb-3 flex justify-end">
+              <button
+                onClick={handleReprocess}
+                disabled={reprocess.isPending}
+                className="inline-flex items-center gap-1.5 text-[11px] h-7 px-2.5 rounded-md border border-border hover:bg-accent/10 disabled:opacity-60"
+              >
+                {reprocess.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                Reprocessar
+              </button>
+            </div>
+          )}
           {sortedDiag.length === 0 ? (
             <div className="text-xs text-muted-foreground">
-              Nenhum diagnóstico gerado ainda. Atualize os dados do imóvel para gerar.
+              Nenhum diagnóstico gerado ainda. Clique em "Reprocessar" para aplicar as regras configuradas.
             </div>
           ) : (
             <div className="space-y-2">

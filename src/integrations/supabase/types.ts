@@ -160,6 +160,59 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostic_rules: {
+        Row: {
+          category: Database["public"]["Enums"]["rule_category"]
+          condition_json: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          organization_id: string
+          report_message: string
+          severity: Database["public"]["Enums"]["severidade"]
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["rule_category"]
+          condition_json?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          organization_id: string
+          report_message: string
+          severity?: Database["public"]["Enums"]["severidade"]
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["rule_category"]
+          condition_json?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          organization_id?: string
+          report_message?: string
+          severity?: Database["public"]["Enums"]["severidade"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environmental_analysis: {
         Row: {
           analyzed_at: string
@@ -820,6 +873,10 @@ export type Database = {
         Args: { _property_id: string }
         Returns: undefined
       }
+      seed_default_diagnostic_rules: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       alert_status: "novo" | "visualizado" | "resolvido"
@@ -855,6 +912,11 @@ export type Database = {
         | "car"
         | "declarado"
         | "desconhecida"
+      rule_category:
+        | "fundiaria"
+        | "ambiental"
+        | "licenciamento"
+        | "monitoramento"
       severidade: "alta" | "media" | "baixa"
       sigef_status:
         | "certificado"
@@ -1024,6 +1086,12 @@ export const Constants = {
         "car",
         "declarado",
         "desconhecida",
+      ],
+      rule_category: [
+        "fundiaria",
+        "ambiental",
+        "licenciamento",
+        "monitoramento",
       ],
       severidade: ["alta", "media", "baixa"],
       sigef_status: [

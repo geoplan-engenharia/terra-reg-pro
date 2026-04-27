@@ -7,6 +7,7 @@ import type {
   MonitoringAlert,
   EnvironmentalLicense,
   DataSource,
+  DiagnosticRule,
 } from "./types";
 
 // =====================
@@ -321,5 +322,70 @@ export function useDeleteDataSource() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["data_sources"] }),
+  });
+}
+
+// =====================
+// DIAGNOSTIC RULES
+// =====================
+export function useDiagnosticRules() {
+  return useQuery({
+    queryKey: ["diagnostic_rules"],
+    queryFn: async (): Promise<DiagnosticRule[]> => {
+      const { data, error } = await supabase
+        .from("diagnostic_rules")
+        .select("*")
+        .order("category")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as unknown as DiagnosticRule[];
+    },
+  });
+}
+
+export function useUpsertDiagnosticRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<DiagnosticRule> & { name: string; key: string; category: string; report_message: string; organization_id?: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = supabase as any;
+      if (input.id) {
+        const { id, created_at: _c, updated_at: _u, ...patch } = input;
+        const { data, error } = await client.from("diagnostic_rules").update(patch).eq("id", id).select().single();
+        if (error) throw error;
+        return data as DiagnosticRule;
+      }
+      const { data, error } = await client.from("diagnostic_rules").insert(input).select().single();
+      if (error) throw error;
+      return data as DiagnosticRule;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["diagnostic_rules"] }),
+  });
+}
+
+export function useDeleteDiagnosticRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("diagnostic_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["diagnostic_rules"] }),
+  });
+}
+
+export function useReprocessDiagnostics() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (propertyId: string) => {
+      const { error } = await supabase.rpc("run_property_diagnostics", { _property_id: propertyId });
+      if (error) throw error;
+      return propertyId;
+    },
+    onSuccess: (propertyId) => {
+      qc.invalidateQueries({ queryKey: ["diagnostics", propertyId] });
+      qc.invalidateQueries({ queryKey: ["property", propertyId] });
+      qc.invalidateQueries({ queryKey: ["properties"] });
+    },
   });
 }

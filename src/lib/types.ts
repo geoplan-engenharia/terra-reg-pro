@@ -95,6 +95,23 @@ export interface EnvironmentalLicense {
 
 export type DataSourceStatus = "planejada" | "ativa" | "instavel" | "indisponivel";
 
+export type RuleCategory = "fundiaria" | "ambiental" | "licenciamento" | "monitoramento";
+
+export interface DiagnosticRule {
+  id: string;
+  organization_id: string;
+  name: string;
+  key: string;
+  category: RuleCategory;
+  severity: Severidade;
+  description: string | null;
+  report_message: string;
+  condition_json: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DataSource {
   id: string;
   key: string;
