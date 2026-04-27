@@ -120,7 +120,7 @@ function ConfiguracoesPage() {
                         <td className="px-5 py-3 text-right">
                           <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/60 px-2 py-0.5 text-[11px] capitalize">
                             <ShieldCheck className="h-3 w-3 text-primary" />
-                            {m.role ? ROLE_LABEL[m.role] : "—"}
+                            {m.roles.length > 0 ? m.roles.map((r) => ROLE_LABEL[r]).join(", ") : "—"}
                           </span>
                         </td>
                       </tr>
