@@ -64,8 +64,8 @@ const emptyForm: FormState = {
 };
 
 function DataSourcesPage() {
-  const { isAdmin, role } = useAuth();
-  const canRunSync = isAdmin || role === "tecnico";
+  const { isAdmin, hasAnyRole } = useAuth();
+  const canRunSync = hasAnyRole(["admin", "tecnico"]);
   const { data: sources = [], isLoading } = useDataSources();
   const upsert = useUpsertDataSource();
   const remove = useDeleteDataSource();
