@@ -272,6 +272,8 @@ export type Database = {
       }
       environmental_licenses: {
         Row: {
+          attachment_name: string | null
+          attachment_uploaded_at: string | null
           attachment_url: string | null
           client_id: string | null
           created_at: string
@@ -290,6 +292,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_uploaded_at?: string | null
           attachment_url?: string | null
           client_id?: string | null
           created_at?: string
@@ -308,6 +312,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_uploaded_at?: string | null
           attachment_url?: string | null
           client_id?: string | null
           created_at?: string
