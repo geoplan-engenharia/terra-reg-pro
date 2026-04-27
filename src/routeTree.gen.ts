@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as MonitoramentoRouteImport } from './routes/monitoramento'
 import { Route as MapaRouteImport } from './routes/mapa'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LicencasRouteImport } from './routes/licencas'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MonitoramentoRoute = MonitoramentoRouteImport.update({
   id: '/monitoramento',
   path: '/monitoramento',
@@ -24,6 +31,11 @@ const MonitoramentoRoute = MonitoramentoRouteImport.update({
 const MapaRoute = MapaRouteImport.update({
   id: '/mapa',
   path: '/mapa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LicencasRoute = LicencasRouteImport.update({
@@ -52,16 +64,20 @@ export interface FileRoutesByFullPath {
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/licencas': typeof LicencasRoute
+  '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/signup': typeof SignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/licencas': typeof LicencasRoute
+  '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/signup': typeof SignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,8 +85,10 @@ export interface FileRoutesById {
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/licencas': typeof LicencasRoute
+  '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/signup': typeof SignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -79,18 +97,30 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/clientes'
     | '/licencas'
+    | '/login'
     | '/mapa'
     | '/monitoramento'
+    | '/signup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/alertas' | '/clientes' | '/licencas' | '/mapa' | '/monitoramento'
+  to:
+    | '/'
+    | '/alertas'
+    | '/clientes'
+    | '/licencas'
+    | '/login'
+    | '/mapa'
+    | '/monitoramento'
+    | '/signup'
   id:
     | '__root__'
     | '/'
     | '/alertas'
     | '/clientes'
     | '/licencas'
+    | '/login'
     | '/mapa'
     | '/monitoramento'
+    | '/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -98,12 +128,21 @@ export interface RootRouteChildren {
   AlertasRoute: typeof AlertasRoute
   ClientesRoute: typeof ClientesRoute
   LicencasRoute: typeof LicencasRoute
+  LoginRoute: typeof LoginRoute
   MapaRoute: typeof MapaRoute
   MonitoramentoRoute: typeof MonitoramentoRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/monitoramento': {
       id: '/monitoramento'
       path: '/monitoramento'
@@ -116,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/mapa'
       fullPath: '/mapa'
       preLoaderRoute: typeof MapaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/licencas': {
@@ -154,18 +200,11 @@ const rootRouteChildren: RootRouteChildren = {
   AlertasRoute: AlertasRoute,
   ClientesRoute: ClientesRoute,
   LicencasRoute: LicencasRoute,
+  LoginRoute: LoginRoute,
   MapaRoute: MapaRoute,
   MonitoramentoRoute: MonitoramentoRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
