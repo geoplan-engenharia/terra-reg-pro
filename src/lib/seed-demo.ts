@@ -83,7 +83,7 @@ export async function seedDemoData(orgId: string): Promise<{ inserted: boolean; 
   const { data: insertedProps, error: pErr } = await supabase.from("rural_properties").insert(props).select("id, name");
   if (pErr) throw pErr;
 
-  const propByName = (n: string) => insertedProps?.find((p) => p.name === n)?.id ?? null;
+  const propByName = (n: string): string => insertedProps?.find((p) => p.name === n)?.id ?? "";
 
   // Environmental analysis (drives diagnostics)
   await supabase.from("environmental_analysis").insert([
