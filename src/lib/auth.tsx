@@ -29,6 +29,7 @@ interface AuthState {
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }
+
 const Ctx = createContext<AuthState | null>(null);
 
 async function loadProfile(userId: string): Promise<ProfileInfo | null> {
