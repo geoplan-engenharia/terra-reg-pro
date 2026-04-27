@@ -14,6 +14,7 @@ import {
   TreePine,
   Satellite,
   Mail,
+  Tag,
 } from "lucide-react";
 
 export const Route = createFileRoute("/landing")({
@@ -134,6 +135,12 @@ function Hero() {
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-90 sm:w-auto"
           >
             Criar conta gratuita <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            to="/precos"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-6 text-sm font-semibold text-primary transition hover:bg-primary/10 sm:w-auto"
+          >
+            <Tag className="h-4 w-4" /> Ver planos
           </Link>
           <Link
             to="/login"
@@ -370,6 +377,12 @@ function CTA() {
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-glow hover:opacity-90 sm:w-auto"
               >
                 Criar conta <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/precos"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-6 text-sm font-semibold text-primary hover:bg-primary/20 sm:w-auto"
+              >
+                <Tag className="h-4 w-4" /> Ver planos e preços
               </Link>
               <Link
                 to="/login"
