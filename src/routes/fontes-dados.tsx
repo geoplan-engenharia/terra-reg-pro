@@ -288,6 +288,11 @@ function DataSourcesPage() {
         )}
       </div>
 
+      {/* Simulated sync modal */}
+      {simSource && (
+        <SimulatedSyncModal source={simSource} onClose={() => setSimSource(null)} canRun={canRunSync} />
+      )}
+
       {/* Edit modal */}
       {editing && isAdmin && (
         <div className="fixed inset-0 z-[2000] grid place-items-center bg-background/80 backdrop-blur-sm p-4">
