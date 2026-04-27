@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as RegrasDiagnosticoRouteImport } from './routes/regras-diagnostico'
 import { Route as MonitoramentoRouteImport } from './routes/monitoramento'
 import { Route as MembrosRouteImport } from './routes/membros'
 import { Route as MapaRouteImport } from './routes/mapa'
@@ -25,6 +26,11 @@ import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$t
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegrasDiagnosticoRoute = RegrasDiagnosticoRouteImport.update({
+  id: '/regras-diagnostico',
+  path: '/regras-diagnostico',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonitoramentoRoute = MonitoramentoRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/mapa': typeof MapaRoute
   '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
 }
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/mapa': typeof MapaRoute
   '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/mapa': typeof MapaRoute
   '/membros': typeof MembrosRoute
   '/monitoramento': typeof MonitoramentoRoute
+  '/regras-diagnostico': typeof RegrasDiagnosticoRoute
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/membros'
     | '/monitoramento'
+    | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/membros'
     | '/monitoramento'
+    | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/membros'
     | '/monitoramento'
+    | '/regras-diagnostico'
     | '/signup'
     | '/accept-invite/$token'
   fileRoutesById: FileRoutesById
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   MapaRoute: typeof MapaRoute
   MembrosRoute: typeof MembrosRoute
   MonitoramentoRoute: typeof MonitoramentoRoute
+  RegrasDiagnosticoRoute: typeof RegrasDiagnosticoRoute
   SignupRoute: typeof SignupRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
 }
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/regras-diagnostico': {
+      id: '/regras-diagnostico'
+      path: '/regras-diagnostico'
+      fullPath: '/regras-diagnostico'
+      preLoaderRoute: typeof RegrasDiagnosticoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/monitoramento': {
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapaRoute: MapaRoute,
   MembrosRoute: MembrosRoute,
   MonitoramentoRoute: MonitoramentoRoute,
+  RegrasDiagnosticoRoute: RegrasDiagnosticoRoute,
   SignupRoute: SignupRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
 }
