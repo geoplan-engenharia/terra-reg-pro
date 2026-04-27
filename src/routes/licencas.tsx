@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { useLicenses } from "@/lib/queries";
-import { Plus, Calendar, AlertTriangle } from "lucide-react";
+import { LicenseModal } from "@/components/LicenseModal";
+import { LicenseDetailPanel } from "@/components/LicenseDetailPanel";
+import { Plus, Calendar, AlertTriangle, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import type { EnvironmentalLicense } from "@/lib/types";
 
 export const Route = createFileRoute("/licencas")({
   head: () => ({ meta: [{ title: "Licenças Ambientais — GeoTerra" }] }),
@@ -25,16 +30,25 @@ function getNivel(dias: number | null) {
 }
 
 function Licencas() {
+  const { canEditLicenses } = useAuth();
   const { data: licencas = [], isLoading } = useLicenses();
+  const [editing, setEditing] = useState<EnvironmentalLicense | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  const openNew = () => { setEditing(null); setModalOpen(true); };
+  const openEdit = (l: EnvironmentalLicense) => { setEditing(l); setModalOpen(true); setDetailId(null); };
 
   return (
     <AppLayout title="Controle de Licenças Ambientais" subtitle="Alertas automáticos a 180, 90 e 30 dias do vencimento">
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-xs text-muted-foreground">{licencas.length} licença{licencas.length !== 1 ? "s" : ""}</div>
-          <button className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:opacity-90 shadow-glow">
-            <Plus className="h-4 w-4" /> Nova licença
-          </button>
+          {canEditLicenses && (
+            <button onClick={openNew} className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:opacity-90 shadow-glow">
+              <Plus className="h-4 w-4" /> Nova licença
+            </button>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -47,6 +61,7 @@ function Licencas() {
               <thead className="bg-background/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr className="text-left">
                   <th className="px-5 py-3 font-medium">Tipo</th>
+                  <th className="px-3 py-3 font-medium">Número</th>
                   <th className="px-3 py-3 font-medium">Imóvel</th>
                   <th className="px-3 py-3 font-medium">Cliente</th>
                   <th className="px-3 py-3 font-medium">Emissão</th>
@@ -59,9 +74,19 @@ function Licencas() {
                   const dias = diasAte(l.expiration_date);
                   const nivel = getNivel(dias);
                   return (
-                    <tr key={l.id} className="border-t border-border hover:bg-accent/5">
+                    <tr
+                      key={l.id}
+                      onClick={() => setDetailId(l.id)}
+                      className="border-t border-border hover:bg-accent/5 cursor-pointer"
+                    >
                       <td className="px-5 py-3">
                         <span className="inline-flex items-center justify-center font-mono text-[11px] font-semibold h-6 px-2 rounded bg-primary/15 text-primary border border-primary/30">{l.license_type}</span>
+                      </td>
+                      <td className="px-3 py-3 text-xs font-mono">
+                        <div className="inline-flex items-center gap-1.5">
+                          {l.attachment_url && <Paperclip className="h-3 w-3 text-primary" />}
+                          {l.license_number ?? "—"}
+                        </div>
                       </td>
                       <td className="px-3 py-3 text-xs font-medium">{l.property_name ?? "—"}</td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">{l.client_name ?? "—"}</td>
@@ -86,6 +111,17 @@ function Licencas() {
           )}
         </div>
       </div>
+
+      <LicenseModal license={editing} open={modalOpen} onClose={() => setModalOpen(false)} />
+      <LicenseDetailPanel
+        licenseId={detailId}
+        open={!!detailId}
+        onClose={() => setDetailId(null)}
+        onEdit={() => {
+          const lic = licencas.find((x) => x.id === detailId);
+          if (lic) openEdit(lic);
+        }}
+      />
     </AppLayout>
   );
 }
