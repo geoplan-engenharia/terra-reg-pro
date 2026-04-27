@@ -26,6 +26,7 @@ import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminOrganizacoesRouteImport } from './routes/admin.organizacoes'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 
@@ -114,6 +115,11 @@ const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   path: '/usuarios',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPlanosRoute = AdminPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrganizacoesRoute = AdminOrganizacoesRouteImport.update({
   id: '/organizacoes',
   path: '/organizacoes',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
+  '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
 }
 export interface FileRoutesByTo {
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
+  '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
 }
 export interface FileRoutesById {
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
+  '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
 }
 export interface FileRouteTypes {
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/accept-invite/$token'
     | '/admin/organizacoes'
+    | '/admin/planos'
     | '/admin/usuarios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/accept-invite/$token'
     | '/admin/organizacoes'
+    | '/admin/planos'
     | '/admin/usuarios'
   id:
     | '__root__'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/accept-invite/$token'
     | '/admin/organizacoes'
+    | '/admin/planos'
     | '/admin/usuarios'
   fileRoutesById: FileRoutesById
 }
@@ -396,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsuariosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/planos': {
+      id: '/admin/planos'
+      path: '/planos'
+      fullPath: '/admin/planos'
+      preLoaderRoute: typeof AdminPlanosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/organizacoes': {
       id: '/admin/organizacoes'
       path: '/organizacoes'
@@ -415,11 +434,13 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
+  AdminPlanosRoute: typeof AdminPlanosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminOrganizacoesRoute: AdminOrganizacoesRoute,
+  AdminPlanosRoute: AdminPlanosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
 }
 
