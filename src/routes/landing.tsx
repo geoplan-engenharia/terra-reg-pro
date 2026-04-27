@@ -379,6 +379,12 @@ function CTA() {
                 Criar conta <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
+                to="/precos"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-6 text-sm font-semibold text-primary hover:bg-primary/20 sm:w-auto"
+              >
+                <Tag className="h-4 w-4" /> Ver planos e preços
+              </Link>
+              <Link
                 to="/login"
                 className="inline-flex h-11 w-full items-center justify-center rounded-md border border-border bg-card/80 px-6 text-sm font-semibold hover:border-primary/50 hover:text-primary sm:w-auto"
               >
