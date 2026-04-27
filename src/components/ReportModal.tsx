@@ -174,6 +174,20 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
                 )}
               </Block>
 
+              <Block title="Análise ambiental" icon={Leaf}>
+                {environmental ? (
+                  <div className="space-y-0">
+                    <Field label="Desmatamento" value={environmental.has_desmatamento ? `Sim${environmental.desmatamento_area_ha != null ? ` · ${Number(environmental.desmatamento_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não"} />
+                    <Field label="Embargo" value={environmental.has_embargo ? `Sim${environmental.embargo_area_ha != null ? ` · ${Number(environmental.embargo_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não"} />
+                    <Field label="Déficit RL" value={environmental.has_reserva_legal_deficit ? "Possível" : "Não identificado"} />
+                    <Field label="Intervenção APP" value={environmental.has_app_violation ? "Possível" : "Não identificada"} />
+                    <Field label="Data da análise" value={new Date(environmental.analyzed_at).toLocaleString("pt-BR")} />
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Sem análise ambiental cadastrada.</div>
+                )}
+              </Block>
+
               <Block title={`Diagnósticos automáticos (${diagnostics.length})`} icon={AlertTriangle}>
                 {diagnostics.length === 0 ? (
                   <div className="text-xs text-muted-foreground">Nenhum diagnóstico gerado.</div>
