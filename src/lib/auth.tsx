@@ -11,6 +11,7 @@ export interface ProfileInfo {
   email: string | null;
   organization_name: string;
   roles: AppRole[];
+  is_super_admin: boolean;
 }
 
 interface AuthState {
