@@ -57,9 +57,12 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
   const { data: imovel, isLoading } = useProperty(propertyId);
   const { data: diagnostics = [] } = usePropertyDiagnostics(propertyId);
   const { data: geometry } = usePropertyGeometry(propertyId);
+  const { data: envHistory = [] } = usePropertyEnvironmentalAnalyses(propertyId);
   const toggleMonitor = useToggleMonitor();
   const reprocess = useReprocessDiagnostics();
   const [reportOpen, setReportOpen] = useState(false);
+  const [envOpen, setEnvOpen] = useState(false);
+  const latestEnv = envHistory[0] ?? null;
 
   const sortedDiag = useMemo(() => {
     const order: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
