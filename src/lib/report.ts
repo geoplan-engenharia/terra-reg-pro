@@ -149,7 +149,20 @@ export function exportReportPDF(ctx: ReportContext): Blob {
   }
   y += 6;
 
-  drawSection("Diagnósticos automáticos");
+  drawSection("Análise ambiental");
+  if (ctx.environmental) {
+    const e = ctx.environmental;
+    drawKV("Desmatamento", e.has_desmatamento ? `Sim${e.desmatamento_area_ha != null ? ` · ${Number(e.desmatamento_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não");
+    drawKV("Embargo", e.has_embargo ? `Sim${e.embargo_area_ha != null ? ` · ${Number(e.embargo_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não");
+    drawKV("Déficit Reserva Legal", e.has_reserva_legal_deficit ? "Possível" : "Não identificado");
+    drawKV("Intervenção em APP", e.has_app_violation ? "Possível" : "Não identificada");
+    drawKV("Data da análise", new Date(e.analyzed_at).toLocaleString("pt-BR"));
+  } else {
+    drawKV("Status", "Sem análise ambiental cadastrada");
+  }
+  y += 6;
+
+
   if (ctx.diagnostics.length === 0) {
     drawKV("Status", "Nenhum diagnóstico gerado");
   } else {
