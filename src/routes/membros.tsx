@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Mail, UserPlus, Copy, ShieldCheck, Loader2, X, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PlanLimitNotice } from "@/components/PlanLimitNotice";
 
 export const Route = createFileRoute("/membros")({
   head: () => ({ meta: [{ title: "Membros & Convites — GeoTerra" }] }),
@@ -60,6 +61,7 @@ function MembrosPage() {
               <UserPlus className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold">Convidar membro</h2>
             </div>
+            <div className="mb-3"><PlanLimitNotice resource="users" /></div>
             <form onSubmit={handleInvite} className="space-y-3">
               <div>
                 <label className="text-xs font-medium">E-mail</label>
