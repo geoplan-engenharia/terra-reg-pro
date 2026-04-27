@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
 import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson } from "lucide-react";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { ReportModal } from "./ReportModal";
 
 const confiabilidadeMap: Record<Confiabilidade, { label: string; classes: string; dot: string }> = {
   alta: { label: "Alta", classes: "bg-success/15 text-success border-success/30", dot: "bg-success" },
@@ -56,6 +57,7 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
   const { data: diagnostics = [] } = usePropertyDiagnostics(propertyId);
   const { data: geometry } = usePropertyGeometry(propertyId);
   const toggleMonitor = useToggleMonitor();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const sortedDiag = useMemo(() => {
     const order: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
@@ -216,28 +218,37 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
         )}
       </div>
 
-      <div className="border-t border-border p-3 flex gap-2">
-        {canEditProperties && onEdit && (
-          <button
-            onClick={onEdit}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card text-sm font-medium h-9 px-3 hover:bg-accent/10 transition"
-          >
-            <Pencil className="h-4 w-4" /> Editar
-          </button>
-        )}
+      <div className="border-t border-border p-3 space-y-2">
         <button
-          onClick={handleMonitor}
-          disabled={!canEditProperties || toggleMonitor.isPending}
-          className={cn(
-            "flex-1 inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium h-9 transition disabled:opacity-50",
-            imovel.monitorado
-              ? "bg-success/20 text-success border border-success/40"
-              : "bg-primary text-primary-foreground hover:opacity-90"
-          )}
+          onClick={() => setReportOpen(true)}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-gradient-primary text-primary-foreground text-sm font-medium h-9 hover:opacity-90 transition shadow-glow"
         >
-          <Eye className="h-4 w-4" /> {imovel.monitorado ? "Monitorando" : "Monitorar"}
+          <FileDown className="h-4 w-4" /> Gerar relatório
         </button>
+        <div className="flex gap-2">
+          {canEditProperties && onEdit && (
+            <button
+              onClick={onEdit}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card text-sm font-medium h-9 px-3 hover:bg-accent/10 transition"
+            >
+              <Pencil className="h-4 w-4" /> Editar
+            </button>
+          )}
+          <button
+            onClick={handleMonitor}
+            disabled={!canEditProperties || toggleMonitor.isPending}
+            className={cn(
+              "flex-1 inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium h-9 transition disabled:opacity-50",
+              imovel.monitorado
+                ? "bg-success/20 text-success border border-success/40"
+                : "bg-secondary text-secondary-foreground hover:opacity-90"
+            )}
+          >
+            <Eye className="h-4 w-4" /> {imovel.monitorado ? "Monitorando" : "Monitorar"}
+          </button>
+        </div>
       </div>
+      {reportOpen && <ReportModal propertyId={imovel.id} onClose={() => setReportOpen(false)} />}
     </aside>
   );
 }
