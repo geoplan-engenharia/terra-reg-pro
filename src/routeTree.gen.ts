@@ -20,6 +20,7 @@ import { Route as LicencasRouteImport } from './routes/licencas'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as FontesDadosRouteImport } from './routes/fontes-dados'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
@@ -80,6 +81,11 @@ const FontesDadosRoute = FontesDadosRouteImport.update({
   path: '/fontes-dados',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientesRoute = ClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
   '/landing': typeof LandingRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
   '/landing': typeof LandingRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
   '/landing': typeof LandingRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/clientes'
+    | '/configuracoes'
     | '/fontes-dados'
     | '/historico'
     | '/landing'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/clientes'
+    | '/configuracoes'
     | '/fontes-dados'
     | '/historico'
     | '/landing'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/clientes'
+    | '/configuracoes'
     | '/fontes-dados'
     | '/historico'
     | '/landing'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertasRoute: typeof AlertasRoute
   ClientesRoute: typeof ClientesRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   FontesDadosRoute: typeof FontesDadosRoute
   HistoricoRoute: typeof HistoricoRoute
   LandingRoute: typeof LandingRoute
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FontesDadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clientes': {
       id: '/clientes'
       path: '/clientes'
@@ -339,6 +359,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
   ClientesRoute: ClientesRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   FontesDadosRoute: FontesDadosRoute,
   HistoricoRoute: HistoricoRoute,
   LandingRoute: LandingRoute,
