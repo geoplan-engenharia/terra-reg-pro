@@ -7,6 +7,7 @@ import type {
   MonitoringAlert,
   EnvironmentalLicense,
   DataSource,
+  DiagnosticRule,
 } from "./types";
 
 // =====================
