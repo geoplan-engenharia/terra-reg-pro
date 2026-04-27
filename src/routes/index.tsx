@@ -116,6 +116,13 @@ function Dashboard() {
           <KpiCard icon={Eye} label="Monitorados" value={String(monitorados)} delta="Verificação contínua" tone="warn" />
         </div>
 
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard icon={Bell} label="Alertas novos" value={String(novos)} delta="Aguardando triagem" tone="info" />
+          <KpiCard icon={AlertTriangle} label="Alertas críticos" value={String(criticos)} delta="Severidade alta em aberto" tone="danger" />
+          <KpiCard icon={ShieldCheck} label="Licenças vencendo" value={String(licencas30)} delta="Próximos 30 dias" tone="warn" />
+          <KpiCard icon={Activity} label="Imóveis em risco alto" value={String(imoveisAltaSev)} delta="Diagnóstico crítico" tone="danger" />
+        </div>
+
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
