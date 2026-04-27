@@ -89,8 +89,21 @@ export interface EnvironmentalLicense {
   issue_date: string | null;
   expiration_date: string | null;
   attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_uploaded_at: string | null;
   status: LicenseStatus;
   notes: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LicenseAlert {
+  id: string;
+  license_id: string;
+  organization_id: string;
+  kind: LicenseAlertKind;
+  status: AlertStatus;
+  triggered_at: string;
 }
 
 export type DataSourceStatus = "planejada" | "ativa" | "instavel" | "indisponivel";
