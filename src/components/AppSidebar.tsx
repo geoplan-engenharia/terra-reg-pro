@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Map, Eye, FileCheck2, Users, Bell, Leaf, UserCog } from "lucide-react";
+import { LayoutDashboard, Map, Eye, FileCheck2, Users, Bell, Leaf, UserCog, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -10,6 +10,7 @@ const items = [
   { to: "/licencas", icon: FileCheck2, label: "Licenças" },
   { to: "/clientes", icon: Users, label: "Clientes" },
   { to: "/alertas", icon: Bell, label: "Alertas" },
+  { to: "/historico", icon: History, label: "Histórico" },
 ] as const;
 
 export function AppSidebar() {
