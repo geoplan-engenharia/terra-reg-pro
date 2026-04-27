@@ -1,11 +1,12 @@
 import { jsPDF } from "jspdf";
-import type { RuralProperty, Diagnostic } from "./types";
+import type { RuralProperty, Diagnostic, EnvironmentalAnalysis } from "./types";
 import type { PropertyGeometry } from "./queries";
 
 export interface ReportContext {
   property: RuralProperty;
   diagnostics: Diagnostic[];
   geometry: PropertyGeometry | null;
+  environmental: EnvironmentalAnalysis | null;
   organizationName: string;
   emittedBy: string;
   emittedAt: Date;
@@ -145,6 +146,19 @@ export function exportReportPDF(ctx: ReportContext): Blob {
   }
   if (ctx.property.centroid_lat != null && ctx.property.centroid_lng != null) {
     drawKV("Centróide", `${Number(ctx.property.centroid_lat).toFixed(6)}, ${Number(ctx.property.centroid_lng).toFixed(6)}`);
+  }
+  y += 6;
+
+  drawSection("Análise ambiental");
+  if (ctx.environmental) {
+    const e = ctx.environmental;
+    drawKV("Desmatamento", e.has_desmatamento ? `Sim${e.desmatamento_area_ha != null ? ` · ${Number(e.desmatamento_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não");
+    drawKV("Embargo", e.has_embargo ? `Sim${e.embargo_area_ha != null ? ` · ${Number(e.embargo_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não");
+    drawKV("Déficit Reserva Legal", e.has_reserva_legal_deficit ? "Possível" : "Não identificado");
+    drawKV("Intervenção em APP", e.has_app_violation ? "Possível" : "Não identificada");
+    drawKV("Data da análise", new Date(e.analyzed_at).toLocaleString("pt-BR"));
+  } else {
+    drawKV("Status", "Sem análise ambiental cadastrada");
   }
   y += 6;
 

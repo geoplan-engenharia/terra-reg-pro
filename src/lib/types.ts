@@ -112,6 +112,20 @@ export interface DiagnosticRule {
   updated_at: string;
 }
 
+export interface EnvironmentalAnalysis {
+  id: string;
+  property_id: string;
+  organization_id: string;
+  has_desmatamento: boolean;
+  desmatamento_area_ha: number | null;
+  has_embargo: boolean;
+  embargo_area_ha: number | null;
+  has_reserva_legal_deficit: boolean;
+  has_app_violation: boolean;
+  raw_payload: Record<string, unknown> | null;
+  analyzed_at: string;
+}
+
 export interface DataSource {
   id: string;
   key: string;

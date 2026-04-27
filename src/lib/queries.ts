@@ -8,6 +8,7 @@ import type {
   EnvironmentalLicense,
   DataSource,
   DiagnosticRule,
+  EnvironmentalAnalysis,
 } from "./types";
 
 // =====================
@@ -386,6 +387,80 @@ export function useReprocessDiagnostics() {
       qc.invalidateQueries({ queryKey: ["diagnostics", propertyId] });
       qc.invalidateQueries({ queryKey: ["property", propertyId] });
       qc.invalidateQueries({ queryKey: ["properties"] });
+    },
+  });
+}
+
+// =====================
+// ENVIRONMENTAL ANALYSIS
+// =====================
+export function usePropertyEnvironmentalAnalyses(propertyId: string | null) {
+  return useQuery({
+    queryKey: ["env_analyses", propertyId],
+    enabled: !!propertyId,
+    queryFn: async (): Promise<EnvironmentalAnalysis[]> => {
+      if (!propertyId) return [];
+      const { data, error } = await supabase
+        .from("environmental_analysis")
+        .select("*")
+        .eq("property_id", propertyId)
+        .order("analyzed_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as EnvironmentalAnalysis[];
+    },
+  });
+}
+
+export function useUpsertEnvironmentalAnalysis() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id?: string;
+      property_id: string;
+      organization_id: string;
+      has_desmatamento: boolean;
+      desmatamento_area_ha: number | null;
+      has_embargo: boolean;
+      embargo_area_ha: number | null;
+      has_reserva_legal_deficit: boolean;
+      has_app_violation: boolean;
+      analyzed_at?: string;
+    }) => {
+      const payload = {
+        property_id: input.property_id,
+        organization_id: input.organization_id,
+        has_desmatamento: input.has_desmatamento,
+        desmatamento_area_ha: input.desmatamento_area_ha,
+        has_embargo: input.has_embargo,
+        embargo_area_ha: input.embargo_area_ha,
+        has_reserva_legal_deficit: input.has_reserva_legal_deficit,
+        has_app_violation: input.has_app_violation,
+        analyzed_at: input.analyzed_at ?? new Date().toISOString(),
+      };
+      if (input.id) {
+        const { data, error } = await supabase
+          .from("environmental_analysis")
+          .update(payload)
+          .eq("id", input.id)
+          .select()
+          .single();
+        if (error) throw error;
+        await supabase.rpc("run_property_diagnostics", { _property_id: input.property_id });
+        return data as EnvironmentalAnalysis;
+      }
+      const { data, error } = await supabase
+        .from("environmental_analysis")
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      await supabase.rpc("run_property_diagnostics", { _property_id: input.property_id });
+      return data as EnvironmentalAnalysis;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["env_analyses", vars.property_id] });
+      qc.invalidateQueries({ queryKey: ["diagnostics", vars.property_id] });
+      qc.invalidateQueries({ queryKey: ["property", vars.property_id] });
     },
   });
 }

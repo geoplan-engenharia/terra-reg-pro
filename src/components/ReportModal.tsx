@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { X, FileDown, Loader2, ShieldCheck, AlertTriangle, MapPin, FileText, Hash, FileJson } from "lucide-react";
+import { X, FileDown, Loader2, ShieldCheck, AlertTriangle, MapPin, FileText, Hash, FileJson, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { useProperty, usePropertyDiagnostics, usePropertyGeometry } from "@/lib/queries";
+import { useProperty, usePropertyDiagnostics, usePropertyGeometry, usePropertyEnvironmentalAnalyses } from "@/lib/queries";
 import { useLogConsultation } from "@/lib/history";
 import { buildReportSummary, downloadBlob, exportReportPDF, reportFilename } from "@/lib/report";
 import { toast } from "sonner";
@@ -54,6 +54,8 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
   const { data: property, isLoading: lp } = useProperty(propertyId);
   const { data: diagnostics = [], isLoading: ld } = usePropertyDiagnostics(propertyId);
   const { data: geometry } = usePropertyGeometry(propertyId);
+  const { data: envHistory = [] } = usePropertyEnvironmentalAnalyses(propertyId);
+  const environmental = envHistory[0] ?? null;
   const logConsult = useLogConsultation();
   const [exporting, setExporting] = useState(false);
   const emittedAt = useMemo(() => new Date(), []);
@@ -66,6 +68,7 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
         property,
         diagnostics,
         geometry: geometry ?? null,
+        environmental,
         organizationName: profile.organization_name,
         emittedBy: profile.full_name ?? profile.email ?? "Usuário",
         emittedAt,
@@ -168,6 +171,20 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
                   </div>
                 ) : (
                   <div className="text-xs text-muted-foreground">Nenhuma geometria vinculada ao imóvel.</div>
+                )}
+              </Block>
+
+              <Block title="Análise ambiental" icon={Leaf}>
+                {environmental ? (
+                  <div className="space-y-0">
+                    <Field label="Desmatamento" value={environmental.has_desmatamento ? `Sim${environmental.desmatamento_area_ha != null ? ` · ${Number(environmental.desmatamento_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não"} />
+                    <Field label="Embargo" value={environmental.has_embargo ? `Sim${environmental.embargo_area_ha != null ? ` · ${Number(environmental.embargo_area_ha).toLocaleString("pt-BR")} ha` : ""}` : "Não"} />
+                    <Field label="Déficit RL" value={environmental.has_reserva_legal_deficit ? "Possível" : "Não identificado"} />
+                    <Field label="Intervenção APP" value={environmental.has_app_violation ? "Possível" : "Não identificada"} />
+                    <Field label="Data da análise" value={new Date(environmental.analyzed_at).toLocaleString("pt-BR")} />
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Sem análise ambiental cadastrada.</div>
                 )}
               </Block>
 
