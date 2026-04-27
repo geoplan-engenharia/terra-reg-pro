@@ -104,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasRole,
     hasAnyRole,
     isAdmin,
+    isSuperAdmin: profile?.is_super_admin ?? false,
     canEditProperties: hasAnyRole(["admin", "tecnico"]),
     canEditClients: hasAnyRole(["admin", "tecnico", "financeiro"]),
     canEditLicenses: hasAnyRole(["admin", "tecnico", "financeiro"]),
