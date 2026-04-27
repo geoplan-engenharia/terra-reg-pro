@@ -208,6 +208,16 @@ function ConfiguracoesPage() {
               <ShortcutLink to="/membros" icon={Users} title="Membros & convites" desc="Gerencie acessos do escritório." />
             </div>
           </section>
+
+          {/* Suporte */}
+          <section className="rounded-xl border border-border bg-card p-5 space-y-3">
+            <header className="flex items-center gap-2">
+              <Bug className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold">Suporte</h2>
+            </header>
+            <p className="text-xs text-muted-foreground">Encontrou um problema ou tem uma sugestão? Envie para a equipe.</p>
+            <SupportReportForm />
+          </section>
         </div>
       </div>
     </AppLayout>
