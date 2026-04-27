@@ -8,6 +8,7 @@ import type {
   EnvironmentalLicense,
   DataSource,
   DiagnosticRule,
+  EnvironmentalAnalysis,
 } from "./types";
 
 // =====================
