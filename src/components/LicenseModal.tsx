@@ -13,6 +13,7 @@ import {
 import type { EnvironmentalLicense, LicenseStatus } from "@/lib/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PlanLimitNotice } from "@/components/PlanLimitNotice";
 
 const LICENSE_TYPES = ["LP", "LI", "LO", "LAS", "LAC", "DLAM", "Outorga", "Autorização Ambiental", "Outro"];
 const STATUS_OPTIONS: { value: LicenseStatus; label: string }[] = [
@@ -133,6 +134,7 @@ export function LicenseModal({ license, open, onClose }: Props) {
         </div>
 
         <div className="p-5 space-y-5">
+          {!license && <PlanLimitNotice resource="licenses" />}
           {/* Tipo + Status */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Tipo de licença *">
