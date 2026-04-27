@@ -116,7 +116,7 @@ export function MapaInterativo() {
       </MapContainer>
 
       <div className="absolute top-4 left-4 w-80 max-h-[calc(100%-2rem)] flex flex-col gap-3 z-[999]">
-        <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3">
+        <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -126,6 +126,15 @@ export function MapaInterativo() {
               className="h-9 w-full rounded-md border border-input bg-input/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+          {canEditProperties && (
+            <button
+              type="button"
+              onClick={() => { setEditTarget(null); setFormMode("create"); }}
+              className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+            >
+              <Plus className="h-4 w-4" /> Novo imóvel
+            </button>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel">
