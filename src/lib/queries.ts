@@ -130,6 +130,90 @@ export function useCreateProperty() {
   });
 }
 
+export function useDeleteProperty() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Cascade: remove dependents first (no FK CASCADE in schema)
+      await supabase.from("property_geometries").delete().eq("property_id", id);
+      await supabase.from("property_diagnostics").delete().eq("property_id", id);
+      await supabase.from("monitoring_alerts").delete().eq("property_id", id);
+      await supabase.from("environmental_analysis").delete().eq("property_id", id);
+      await supabase.from("property_registry_data").delete().eq("property_id", id);
+      const { error } = await supabase.from("rural_properties").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["monitoring_alerts"] });
+    },
+  });
+}
+
+// =====================
+// GEOMETRIES
+// =====================
+export interface PropertyGeometry {
+  id: string;
+  property_id: string;
+  organization_id: string;
+  geojson: GeoJSON.GeoJsonObject & { _meta?: { filename?: string; filetype?: string } };
+  bbox: [number, number, number, number] | null;
+  source: string | null;
+  created_at: string;
+}
+
+export function usePropertyGeometry(propertyId: string | null) {
+  return useQuery({
+    queryKey: ["geometry", propertyId],
+    enabled: !!propertyId,
+    queryFn: async (): Promise<PropertyGeometry | null> => {
+      if (!propertyId) return null;
+      const { data, error } = await supabase
+        .from("property_geometries")
+        .select("*")
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as PropertyGeometry | null;
+    },
+  });
+}
+
+export function useUpsertGeometry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      property_id: string;
+      organization_id: string;
+      geojson: GeoJSON.GeoJsonObject;
+      bbox: [number, number, number, number] | null;
+      source: string;
+      filename: string;
+      filetype: string;
+    }) => {
+      // Replace previous geometry (keep history minimal: latest only)
+      await supabase.from("property_geometries").delete().eq("property_id", input.property_id);
+      const payload = {
+        property_id: input.property_id,
+        organization_id: input.organization_id,
+        geojson: { ...input.geojson, _meta: { filename: input.filename, filetype: input.filetype } },
+        bbox: input.bbox,
+        source: input.source,
+      };
+      const { data, error } = await supabase.from("property_geometries").insert(payload).select().single();
+      if (error) throw error;
+      return data as unknown as PropertyGeometry;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["geometry", vars.property_id] });
+      qc.invalidateQueries({ queryKey: ["properties"] });
+    },
+  });
+}
+
 // =====================
 // MONITORING ALERTS
 // =====================

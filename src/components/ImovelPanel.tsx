@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
-import { useProperty, usePropertyDiagnostics, useToggleMonitor } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2 } from "lucide-react";
+import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry } from "@/lib/queries";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -50,10 +50,11 @@ const carStatusLabel: Record<string, { label: string; cls: string }> = {
   nao_cadastrado: { label: "Não cadastrado", cls: "border-muted bg-muted/30 text-muted-foreground" },
 };
 
-export function ImovelPanel({ propertyId, onClose }: { propertyId: string; onClose: () => void }) {
+export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: string; onClose: () => void; onEdit?: () => void }) {
   const { canEditProperties } = useAuth();
   const { data: imovel, isLoading } = useProperty(propertyId);
   const { data: diagnostics = [] } = usePropertyDiagnostics(propertyId);
+  const { data: geometry } = usePropertyGeometry(propertyId);
   const toggleMonitor = useToggleMonitor();
 
   const sortedDiag = useMemo(() => {
@@ -174,6 +175,35 @@ export function ImovelPanel({ propertyId, onClose }: { propertyId: string; onClo
           </div>
         </Section>
 
+        <Section title="Geometria vinculada" icon={FileJson}>
+          {geometry ? (
+            <div className="rounded-md border border-border bg-background/30 p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Arquivo</span>
+                <span className="font-mono text-[11px] truncate max-w-[60%] text-right">
+                  {geometry.geojson._meta?.filename ?? "geometria.geojson"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Enviada em</span>
+                <span>{new Date(geometry.created_at).toLocaleString("pt-BR")}</span>
+              </div>
+              {canEditProperties && onEdit && (
+                <button onClick={onEdit} className="mt-2 w-full inline-flex items-center justify-center gap-1.5 text-[11px] h-8 rounded-md border border-border hover:bg-accent/10">
+                  Substituir geometria
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              Nenhuma geometria vinculada.
+              {canEditProperties && onEdit && (
+                <button onClick={onEdit} className="ml-1 text-primary hover:underline">Importar GeoJSON</button>
+              )}
+            </div>
+          )}
+        </Section>
+
         {(imovel.notes || imovel.last_consultation_at) && (
           <Section title="Observações" icon={FileText}>
             {imovel.notes && <p className="text-xs text-muted-foreground leading-relaxed">{imovel.notes}</p>}
@@ -187,6 +217,14 @@ export function ImovelPanel({ propertyId, onClose }: { propertyId: string; onClo
       </div>
 
       <div className="border-t border-border p-3 flex gap-2">
+        {canEditProperties && onEdit && (
+          <button
+            onClick={onEdit}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card text-sm font-medium h-9 px-3 hover:bg-accent/10 transition"
+          >
+            <Pencil className="h-4 w-4" /> Editar
+          </button>
+        )}
         <button
           onClick={handleMonitor}
           disabled={!canEditProperties || toggleMonitor.isPending}

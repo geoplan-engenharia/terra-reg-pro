@@ -4,7 +4,9 @@ import L from "leaflet";
 import { useProperties } from "@/lib/queries";
 import type { RuralProperty } from "@/lib/types";
 import { ImovelPanel } from "./ImovelPanel";
-import { Layers, ChevronRight, Search, Loader2 } from "lucide-react";
+import { PropertyForm } from "./PropertyForm";
+import { useAuth } from "@/lib/auth";
+import { Layers, ChevronRight, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -40,11 +42,16 @@ function colorForProperty(p: RuralProperty): string {
 }
 
 export function MapaInterativo() {
+  const { canEditProperties } = useAuth();
   const { data: properties = [], isLoading } = useProperties();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [camadas, setCamadas] = useState<Camada[]>(camadasIniciais);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
   const [busca, setBusca] = useState("");
+  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
+  const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
+
+  const selected = useMemo(() => properties.find((p) => p.id === selectedId) ?? null, [properties, selectedId]);
 
   const georef = useMemo(
     () => properties.filter((p) => p.centroid_lat != null && p.centroid_lng != null),
@@ -109,7 +116,7 @@ export function MapaInterativo() {
       </MapContainer>
 
       <div className="absolute top-4 left-4 w-80 max-h-[calc(100%-2rem)] flex flex-col gap-3 z-[999]">
-        <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3">
+        <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -119,6 +126,15 @@ export function MapaInterativo() {
               className="h-9 w-full rounded-md border border-input bg-input/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+          {canEditProperties && (
+            <button
+              type="button"
+              onClick={() => { setEditTarget(null); setFormMode("create"); }}
+              className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+            >
+              <Plus className="h-4 w-4" /> Novo imóvel
+            </button>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel">
@@ -200,7 +216,28 @@ export function MapaInterativo() {
         </div>
       </div>
 
-      {selectedId && <ImovelPanel propertyId={selectedId} onClose={() => setSelectedId(null)} />}
+      {selectedId && (
+        <ImovelPanel
+          propertyId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onEdit={() => { if (selected) { setEditTarget(selected); setFormMode("edit"); } }}
+        />
+      )}
+
+      {formMode && (
+        <PropertyForm
+          mode={formMode}
+          property={editTarget}
+          onClose={() => { setFormMode(null); setEditTarget(null); }}
+          onSaved={(id) => {
+            setSelectedId(id);
+            const p = properties.find((x) => x.id === id);
+            if (p?.centroid_lat != null && p?.centroid_lng != null) {
+              setFlyTarget([Number(p.centroid_lat), Number(p.centroid_lng)]);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
