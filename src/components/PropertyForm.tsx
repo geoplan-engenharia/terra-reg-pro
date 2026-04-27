@@ -14,6 +14,7 @@ import {
 import type { RuralProperty, CarStatus, SigefStatus, MatriculaSource, Confiabilidade } from "@/lib/types";
 import { parseGeoJSON } from "@/lib/geojson";
 import { cn } from "@/lib/utils";
+import { PlanLimitNotice } from "@/components/PlanLimitNotice";
 
 const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"] as const;
 
@@ -228,7 +229,9 @@ export function PropertyForm({ mode, property, onClose, onSaved }: Props) {
     <ModalShell onClose={onClose} title={mode === "create" ? "Novo imóvel rural" : "Editar imóvel"}>
       <form onSubmit={submit} className="flex flex-col max-h-[calc(90vh-3.5rem)]">
         <div className="overflow-auto px-6 py-5 space-y-6">
+          {mode === "create" && <PlanLimitNotice resource="properties" />}
           {/* Identificação */}
+
           <Section title="Identificação">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nome do imóvel *" className="col-span-2">
