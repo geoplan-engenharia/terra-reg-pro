@@ -660,6 +660,87 @@ export function useDeleteDataSource() {
 }
 
 // =====================
+// SIMULATED SYNC
+// =====================
+export interface SimulatedSyncRun {
+  id: string;
+  organization_id: string;
+  data_source_key: string;
+  property_id: string | null;
+  status: string;
+  message: string | null;
+  findings_count: number;
+  raw_payload: unknown;
+  triggered_by: string | null;
+  created_at: string;
+}
+
+export interface SimulatedSyncFinding {
+  id: string;
+  run_id: string;
+  organization_id: string;
+  data_source_key: string;
+  property_id: string | null;
+  finding_type: string;
+  severidade: "alta" | "media" | "baixa";
+  title: string;
+  description: string | null;
+  data: unknown;
+  created_at: string;
+}
+
+export function useSimulatedSyncRuns(opts?: { sourceKey?: string; limit?: number }) {
+  return useQuery({
+    queryKey: ["simulated_sync_runs", opts?.sourceKey ?? "all", opts?.limit ?? 50],
+    queryFn: async (): Promise<SimulatedSyncRun[]> => {
+      let q = supabase.from("simulated_sync_runs").select("*").order("created_at", { ascending: false }).limit(opts?.limit ?? 50);
+      if (opts?.sourceKey) q = q.eq("data_source_key", opts.sourceKey);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as SimulatedSyncRun[];
+    },
+  });
+}
+
+export function useSimulatedSyncFindings(runId: string | null) {
+  return useQuery({
+    queryKey: ["simulated_sync_findings", runId],
+    enabled: !!runId,
+    queryFn: async (): Promise<SimulatedSyncFinding[]> => {
+      const { data, error } = await supabase
+        .from("simulated_sync_findings")
+        .select("*")
+        .eq("run_id", runId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as SimulatedSyncFinding[];
+    },
+  });
+}
+
+export function useRunSimulatedSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { dataSourceKey: string; propertyId?: string | null }) => {
+      const { data, error } = await supabase.rpc("run_simulated_sync", {
+        _data_source_key: input.dataSourceKey,
+        _property_id: input.propertyId ?? undefined,
+      });
+      if (error) throw error;
+      return data as string; // run_id
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["simulated_sync_runs"] });
+      qc.invalidateQueries({ queryKey: ["data_sources"] });
+      qc.invalidateQueries({ queryKey: ["monitoring_alerts"] });
+      qc.invalidateQueries({ queryKey: ["unified_alerts"] });
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["property_diagnostics"] });
+    },
+  });
+}
+
+// =====================
 // DIAGNOSTIC RULES
 // =====================
 export function useDiagnosticRules() {

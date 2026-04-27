@@ -818,6 +818,95 @@ export type Database = {
           },
         ]
       }
+      simulated_sync_findings: {
+        Row: {
+          created_at: string
+          data: Json | null
+          data_source_key: string
+          description: string | null
+          finding_type: string
+          id: string
+          organization_id: string
+          property_id: string | null
+          run_id: string
+          severidade: Database["public"]["Enums"]["severidade"]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          data_source_key: string
+          description?: string | null
+          finding_type: string
+          id?: string
+          organization_id: string
+          property_id?: string | null
+          run_id: string
+          severidade?: Database["public"]["Enums"]["severidade"]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          data_source_key?: string
+          description?: string | null
+          finding_type?: string
+          id?: string
+          organization_id?: string
+          property_id?: string | null
+          run_id?: string
+          severidade?: Database["public"]["Enums"]["severidade"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulated_sync_findings_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "simulated_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulated_sync_runs: {
+        Row: {
+          created_at: string
+          data_source_key: string
+          findings_count: number
+          id: string
+          message: string | null
+          organization_id: string
+          property_id: string | null
+          raw_payload: Json | null
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_source_key: string
+          findings_count?: number
+          id?: string
+          message?: string | null
+          organization_id: string
+          property_id?: string | null
+          raw_payload?: Json | null
+          status?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_source_key?: string
+          findings_count?: number
+          id?: string
+          message?: string | null
+          organization_id?: string
+          property_id?: string | null
+          raw_payload?: Json | null
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -878,6 +967,10 @@ export type Database = {
       run_property_diagnostics: {
         Args: { _property_id: string }
         Returns: undefined
+      }
+      run_simulated_sync: {
+        Args: { _data_source_key: string; _property_id?: string }
+        Returns: string
       }
       seed_default_diagnostic_rules: {
         Args: { _org_id: string }

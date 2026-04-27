@@ -4,9 +4,10 @@ import { useAuth } from "@/lib/auth";
 import { useDataSources, useUpsertDataSource, useDeleteDataSource } from "@/lib/queries";
 import type { DataSource, DataSourceStatus } from "@/lib/types";
 import { useMemo, useState } from "react";
-import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Lock } from "lucide-react";
+import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Lock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SimulatedSyncModal } from "@/components/SimulatedSyncModal";
 
 export const Route = createFileRoute("/fontes-dados")({
   head: () => ({
@@ -63,13 +64,15 @@ const emptyForm: FormState = {
 };
 
 function DataSourcesPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasAnyRole } = useAuth();
+  const canRunSync = hasAnyRole(["admin", "tecnico"]);
   const { data: sources = [], isLoading } = useDataSources();
   const upsert = useUpsertDataSource();
   const remove = useDeleteDataSource();
 
   const [editing, setEditing] = useState<FormState | null>(null);
   const [statusFilter, setStatusFilter] = useState<DataSourceStatus | "all">("all");
+  const [simSource, setSimSource] = useState<DataSource | null>(null);
 
   const filtered = useMemo(
     () => (statusFilter === "all" ? sources : sources.filter((s) => s.status === statusFilter)),
@@ -83,10 +86,7 @@ function DataSourcesPage() {
   }, [sources]);
 
   const handleSync = (s: DataSource) => {
-    toast.message(`Sincronização de "${s.name}"`, {
-      description: "Integração ainda não conectada. Estrutura preparada para API futura.",
-      icon: <RefreshCw className="h-4 w-4" />,
-    });
+    setSimSource(s);
   };
 
   const openNew = () => setEditing({ ...emptyForm });
@@ -256,9 +256,11 @@ function DataSourcesPage() {
                   <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
                     <button
                       onClick={() => handleSync(s)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
+                      disabled={!canRunSync}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={canRunSync ? "Executar sincronização simulada" : "Apenas admin/técnico"}
                     >
-                      <RefreshCw className="h-3.5 w-3.5" /> Sincronizar agora
+                      <Sparkles className="h-3.5 w-3.5" /> Sincronização simulada
                     </button>
                     {isAdmin && (
                       <>
@@ -285,6 +287,11 @@ function DataSourcesPage() {
           </div>
         )}
       </div>
+
+      {/* Simulated sync modal */}
+      {simSource && (
+        <SimulatedSyncModal source={simSource} onClose={() => setSimSource(null)} canRun={canRunSync} />
+      )}
 
       {/* Edit modal */}
       {editing && isAdmin && (
