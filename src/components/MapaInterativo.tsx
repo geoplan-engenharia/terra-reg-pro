@@ -216,7 +216,28 @@ export function MapaInterativo() {
         </div>
       </div>
 
-      {selectedId && <ImovelPanel propertyId={selectedId} onClose={() => setSelectedId(null)} />}
+      {selectedId && (
+        <ImovelPanel
+          propertyId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onEdit={() => { if (selected) { setEditTarget(selected); setFormMode("edit"); } }}
+        />
+      )}
+
+      {formMode && (
+        <PropertyForm
+          mode={formMode}
+          property={editTarget}
+          onClose={() => { setFormMode(null); setEditTarget(null); }}
+          onSaved={(id) => {
+            setSelectedId(id);
+            const p = properties.find((x) => x.id === id);
+            if (p?.centroid_lat != null && p?.centroid_lng != null) {
+              setFlyTarget([Number(p.centroid_lat), Number(p.centroid_lng)]);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
