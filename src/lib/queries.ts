@@ -272,16 +272,169 @@ export function useLicenses() {
   });
 }
 
-export function useCreateLicense() {
+export function useLicense(id: string | null) {
+  return useQuery({
+    queryKey: ["license", id],
+    enabled: !!id,
+    queryFn: async (): Promise<(EnvironmentalLicense & { property_name?: string; client_name?: string }) | null> => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("environmental_licenses")
+        .select("*, rural_properties(name), clients(name)")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return {
+        ...(data as EnvironmentalLicense),
+        property_name: (data as { rural_properties?: { name: string } }).rural_properties?.name,
+        client_name: (data as { clients?: { name: string } }).clients?.name,
+      };
+    },
+  });
+}
+
+export function useLicenseAlerts(licenseId: string | null) {
+  return useQuery({
+    queryKey: ["license_alerts", licenseId],
+    enabled: !!licenseId,
+    queryFn: async (): Promise<LicenseAlert[]> => {
+      if (!licenseId) return [];
+      const { data, error } = await supabase
+        .from("license_alerts")
+        .select("*")
+        .eq("license_id", licenseId)
+        .order("triggered_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as LicenseAlert[];
+    },
+  });
+}
+
+export type LicenseUpsertInput = Partial<EnvironmentalLicense> & {
+  license_type: string;
+  organization_id: string;
+};
+
+export function useUpsertLicense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: Partial<EnvironmentalLicense> & { license_type: string; organization_id: string }) => {
-      const { data, error } = await supabase.from("environmental_licenses").insert(input).select().single();
+    mutationFn: async (input: LicenseUpsertInput) => {
+      if (input.id) {
+        const { id, created_at: _c, updated_at: _u, ...patch } = input;
+        const { data, error } = await supabase
+          .from("environmental_licenses")
+          .update(patch)
+          .eq("id", id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data as EnvironmentalLicense;
+      }
+      const { data, error } = await supabase
+        .from("environmental_licenses")
+        .insert(input)
+        .select()
+        .single();
       if (error) throw error;
-      return data;
+      return data as EnvironmentalLicense;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["licenses"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      qc.invalidateQueries({ queryKey: ["license", data.id] });
+      qc.invalidateQueries({ queryKey: ["license_alerts", data.id] });
+      qc.invalidateQueries({ queryKey: ["monitoring_alerts"] });
+    },
   });
+}
+
+export function useDeleteLicense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Try to remove attached file if any
+      const { data: lic } = await supabase
+        .from("environmental_licenses")
+        .select("attachment_url")
+        .eq("id", id)
+        .maybeSingle();
+      const path = (lic as { attachment_url?: string | null } | null)?.attachment_url;
+      if (path) {
+        await supabase.storage.from("license-attachments").remove([path]);
+      }
+      await supabase.from("license_alerts").delete().eq("license_id", id);
+      const { error } = await supabase.from("environmental_licenses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+    },
+  });
+}
+
+export function useUploadLicenseAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      licenseId,
+      organizationId,
+      file,
+    }: {
+      licenseId: string;
+      organizationId: string;
+      file: File;
+    }) => {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${organizationId}/${licenseId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("license-attachments")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data, error } = await supabase
+        .from("environmental_licenses")
+        .update({
+          attachment_url: path,
+          attachment_name: file.name,
+          attachment_uploaded_at: new Date().toISOString(),
+        })
+        .eq("id", licenseId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as EnvironmentalLicense;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      qc.invalidateQueries({ queryKey: ["license", data.id] });
+    },
+  });
+}
+
+export function useRemoveLicenseAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ licenseId, path }: { licenseId: string; path: string }) => {
+      await supabase.storage.from("license-attachments").remove([path]);
+      const { error } = await supabase
+        .from("environmental_licenses")
+        .update({ attachment_url: null, attachment_name: null, attachment_uploaded_at: null })
+        .eq("id", licenseId);
+      if (error) throw error;
+      return licenseId;
+    },
+    onSuccess: (licenseId) => {
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      qc.invalidateQueries({ queryKey: ["license", licenseId] });
+    },
+  });
+}
+
+export async function getLicenseAttachmentUrl(path: string): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from("license-attachments")
+    .createSignedUrl(path, 60 * 10);
+  if (error) return null;
+  return data?.signedUrl ?? null;
 }
 
 // =====================
