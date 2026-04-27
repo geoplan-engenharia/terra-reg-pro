@@ -86,10 +86,7 @@ function DataSourcesPage() {
   }, [sources]);
 
   const handleSync = (s: DataSource) => {
-    toast.message(`Sincronização de "${s.name}"`, {
-      description: "Integração ainda não conectada. Estrutura preparada para API futura.",
-      icon: <RefreshCw className="h-4 w-4" />,
-    });
+    setSimSource(s);
   };
 
   const openNew = () => setEditing({ ...emptyForm });
