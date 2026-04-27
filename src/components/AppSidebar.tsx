@@ -18,7 +18,7 @@ const items = [
 
 export function AppSidebar() {
   const { pathname } = useLocation();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, isSuperAdmin, profile } = useAuth();
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2 px-5 border-b border-sidebar-border">
