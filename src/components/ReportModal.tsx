@@ -88,11 +88,14 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
       });
       downloadBlob(blob, reportFilename(property.name, emittedAt));
       // Marcar progresso de onboarding (relatório gerado)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (await import("@/integrations/supabase/client")).supabase
-        .from("organization_onboarding" as never)
-        .update({ has_generated_report: true } as never)
-        .eq("organization_id" as never, profile.organization_id as never);
+      try {
+        const { supabase: sb } = await import("@/integrations/supabase/client");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (sb as any)
+          .from("organization_onboarding")
+          .update({ has_generated_report: true })
+          .eq("organization_id", profile.organization_id);
+      } catch { /* noop */ }
       toast.success("Relatório exportado");
       onClose();
     } catch (err) {
