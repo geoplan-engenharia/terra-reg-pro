@@ -6,19 +6,31 @@ import type { RuralProperty } from "@/lib/types";
 import { ImovelPanel } from "./ImovelPanel";
 import { PropertyForm } from "./PropertyForm";
 import { LayerFeaturePanel } from "./LayerFeaturePanel";
+import { LayerControl } from "./LayerControl";
+import { MapLegend } from "./MapLegend";
 import { useAuth } from "@/lib/auth";
-import { Layers, ChevronRight, Search, Loader2, Plus } from "lucide-react";
+import { ChevronRight, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
 import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
+const LAYER_PREFS_KEY = "geoterra:active-layers";
+
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
   useEffect(() => {
-    if (target) map.flyTo(target, 9, { duration: 1.2 });
+    if (target) map.flyTo(target, 11, { duration: 1.2 });
   }, [target, map]);
+  return null;
+}
+
+function FitBoundsTo({ bounds }: { bounds: L.LatLngBoundsExpression | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) map.flyToBounds(bounds, { padding: [60, 60], duration: 1.0, maxZoom: 13 });
+  }, [bounds, map]);
   return null;
 }
 
@@ -28,11 +40,23 @@ function colorForProperty(p: RuralProperty): string {
   return "#5fbb6f";
 }
 
+function geometryBounds(geom: GeoJSON.Geometry): L.LatLngBoundsExpression | null {
+  try {
+    const layer = L.geoJSON(geom as GeoJSON.GeoJsonObject);
+    const b = layer.getBounds();
+    return b.isValid() ? b : null;
+  } catch {
+    return null;
+  }
+}
+
 function LayerRenderer({
   layer,
+  selectedFeatureId,
   onFeatureClick,
 }: {
   layer: DataLayer;
+  selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
 }) {
   const { data: features = [] } = useLayerFeatures(layer.id);
@@ -42,18 +66,41 @@ function LayerRenderer({
     features: features.map((f) => ({
       type: "Feature",
       geometry: f.geometry_geojson,
-      properties: { ...f.properties_json, _id: f.id },
+      properties: { ...f.properties_json, _id: f.id, _name: f.external_id, _area: f.area_ha, _src: layer.name },
     })),
   };
   return (
     <GeoJSON
-      key={layer.id + ":" + features.length}
+      key={layer.id + ":" + features.length + ":" + (selectedFeatureId ?? "")}
       data={fc}
-      style={{ color: layer.color, weight: 1.5, fillColor: layer.color, fillOpacity: 0.25 }}
+      style={(feat) => {
+        const id = (feat?.properties as { _id?: string })?._id;
+        const isSelected = id === selectedFeatureId;
+        return {
+          color: layer.color,
+          weight: isSelected ? 3 : 1,
+          fillColor: layer.color,
+          fillOpacity: isSelected ? 0.35 : 0.2,
+        };
+      }}
       onEachFeature={(feat, lyr) => {
+        const id = (feat.properties as { _id?: string })?._id;
+        const name = (feat.properties as { _name?: string })?._name ?? "Feição";
+        const area = (feat.properties as { _area?: number })?._area;
+        const src = (feat.properties as { _src?: string })?._src ?? "";
+        const tooltipHtml = `<div style="font-size:11px"><strong>${name}</strong><br/>${src}${area != null ? `<br/>${Number(area).toLocaleString("pt-BR")} ha` : ""}</div>`;
+        lyr.bindTooltip(tooltipHtml, { sticky: true, direction: "top", opacity: 0.95 });
         lyr.on({
+          mouseover: (e) => {
+            const target = e.target as L.Path;
+            target.setStyle({ weight: 2, fillOpacity: 0.3 });
+          },
+          mouseout: (e) => {
+            const target = e.target as L.Path;
+            const isSelected = id === selectedFeatureId;
+            target.setStyle({ weight: isSelected ? 3 : 1, fillOpacity: isSelected ? 0.35 : 0.2 });
+          },
           click: () => {
-            const id = (feat.properties as { _id?: string })?._id;
             const target = features.find((x) => x.id === id);
             if (target) onFeatureClick(target, layer);
           },
@@ -69,12 +116,31 @@ export function MapaInterativo() {
   const { data: properties = [], isLoading } = useProperties();
   const { data: dataLayers = [] } = useDataLayers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeLayerIds, setActiveLayerIds] = useState<Record<string, boolean>>({});
+  const [activeLayerIds, setActiveLayerIds] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = window.localStorage.getItem(LAYER_PREFS_KEY);
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+    } catch {
+      return {};
+    }
+  });
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
+  const [flyBounds, setFlyBounds] = useState<L.LatLngBoundsExpression | null>(null);
   const [busca, setBusca] = useState("");
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer } | null>(null);
+
+  // Persist layer state
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(LAYER_PREFS_KEY, JSON.stringify(activeLayerIds));
+    } catch {
+      /* ignore */
+    }
+  }, [activeLayerIds]);
 
   const selected = useMemo(() => properties.find((p) => p.id === selectedId) ?? null, [properties, selectedId]);
 
@@ -100,8 +166,20 @@ export function MapaInterativo() {
     [dataLayers]
   );
 
+  const activeLayersList = useMemo(
+    () => visibleLayers.filter((l) => activeLayerIds[l.id]),
+    [visibleLayers, activeLayerIds]
+  );
+
   const toggleLayer = (id: string) =>
     setActiveLayerIds((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const activateAll = () => {
+    const next: Record<string, boolean> = {};
+    visibleLayers.forEach((l) => { next[l.id] = true; });
+    setActiveLayerIds(next);
+  };
+  const clearAll = () => setActiveLayerIds({});
 
   return (
     <div className="relative h-full w-full">
@@ -117,19 +195,21 @@ export function MapaInterativo() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FlyTo target={flyTarget} />
+        <FitBoundsTo bounds={flyBounds} />
 
-        {visibleLayers
-          .filter((l) => activeLayerIds[l.id])
-          .map((l) => (
-            <LayerRenderer
-              key={l.id}
-              layer={l}
-              onFeatureClick={(feature, layer) => {
-                setSelectedFeature({ feature, layer });
-                setSelectedId(null);
-              }}
-            />
-          ))}
+        {activeLayersList.map((l) => (
+          <LayerRenderer
+            key={l.id}
+            layer={l}
+            selectedFeatureId={selectedFeature?.feature.id ?? null}
+            onFeatureClick={(feature, layer) => {
+              setSelectedFeature({ feature, layer });
+              setSelectedId(null);
+              const b = geometryBounds(feature.geometry_geojson);
+              if (b) setFlyBounds(b);
+            }}
+          />
+        ))}
 
         {filtrados.map((p) => {
           const color = colorForProperty(p);
@@ -181,35 +261,13 @@ export function MapaInterativo() {
           )}
         </div>
 
-        <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel">
-          <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
-            <Layers className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Camadas geoespaciais</span>
-          </div>
-          <div className="p-2 space-y-1 max-h-64 overflow-auto">
-            {visibleLayers.length === 0 && (
-              <p className="text-[11px] text-muted-foreground px-2 py-1.5">
-                Nenhuma camada disponível. O Super Admin pode sincronizá-las em Fontes de Dados.
-              </p>
-            )}
-            {visibleLayers.map((c) => (
-              <label
-                key={c.id}
-                className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent/10 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={!!activeLayerIds[c.id]}
-                  onChange={() => toggleLayer(c.id)}
-                  className="h-3.5 w-3.5 accent-primary"
-                />
-                <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: c.color }} />
-                <span className="text-xs flex-1 leading-tight">{c.name}</span>
-                <span className="text-[10px] text-muted-foreground">{c.features_count ?? 0}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <LayerControl
+          layers={visibleLayers}
+          activeIds={activeLayerIds}
+          onToggle={toggleLayer}
+          onActivateAll={activateAll}
+          onClearAll={clearAll}
+        />
 
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel overflow-hidden flex flex-col min-h-0">
           <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
@@ -264,6 +322,8 @@ export function MapaInterativo() {
         </div>
       </div>
 
+      <MapLegend activeLayers={activeLayersList} />
+
       {selectedId && !selectedFeature && (
         <ImovelPanel
           propertyId={selectedId}
@@ -278,8 +338,12 @@ export function MapaInterativo() {
           layer={selectedFeature.layer}
           onClose={() => setSelectedFeature(null)}
           onImported={(id) => {
-            setSelectedId(id);
             setSelectedFeature(null);
+            setSelectedId(id);
+            const p = properties.find((x) => x.id === id);
+            if (p?.centroid_lat != null && p?.centroid_lng != null) {
+              setFlyTarget([Number(p.centroid_lat), Number(p.centroid_lng)]);
+            }
           }}
         />
       )}
