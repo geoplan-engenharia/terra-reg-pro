@@ -87,6 +87,12 @@ export function ReportModal({ propertyId, onClose }: { propertyId: string; onClo
         result_summary: summary,
       });
       downloadBlob(blob, reportFilename(property.name, emittedAt));
+      // Marcar progresso de onboarding (relatório gerado)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (await import("@/integrations/supabase/client")).supabase
+        .from("organization_onboarding" as never)
+        .update({ has_generated_report: true } as never)
+        .eq("organization_id" as never, profile.organization_id as never);
       toast.success("Relatório exportado");
       onClose();
     } catch (err) {
