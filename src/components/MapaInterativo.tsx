@@ -379,6 +379,25 @@ export function MapaInterativo() {
 
       <MapLegend activeLayers={activeLayersList} />
 
+      <div className="absolute top-4 right-4 z-[999] rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-2 flex items-center gap-1">
+        <LayersIcon className="h-3.5 w-3.5 text-muted-foreground ml-1 mr-1" />
+        {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setBasemap(id)}
+            className={cn(
+              "px-2.5 py-1 text-xs rounded-md transition",
+              basemap === id
+                ? "bg-primary text-primary-foreground font-medium"
+                : "text-muted-foreground hover:bg-accent/10"
+            )}
+          >
+            {BASEMAPS[id].label}
+          </button>
+        ))}
+      </div>
+
       {selectedId && !selectedFeature && (
         <ImovelPanel
           propertyId={selectedId}
