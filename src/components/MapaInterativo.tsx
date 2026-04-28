@@ -17,6 +17,37 @@ import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
 const LAYER_PREFS_KEY = "geoterra:active-layers";
+const BASEMAP_PREFS_KEY = "geoterra:basemap";
+
+type BasemapId = "satellite" | "hybrid" | "streets" | "topo";
+
+const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: string; maxZoom?: number; overlayLabels?: string }> = {
+  satellite: {
+    label: "Satélite",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, USDA, USGS, AeroGRID, IGN, GIS User Community',
+    maxZoom: 19,
+  },
+  hybrid: {
+    label: "Satélite + rótulos",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+    overlayLabels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+  },
+  streets: {
+    label: "Ruas (OSM)",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  },
+  topo: {
+    label: "Topográfico",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Topo &copy; Esri',
+    maxZoom: 19,
+  },
+};
 
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
