@@ -332,6 +332,55 @@ function DataSourcesPage() {
             })}
           </div>
         )}
+
+        {/* Synced layers panel */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Camadas geoespaciais sincronizadas</h2>
+            <span className="text-[11px] text-muted-foreground">({layers.length})</span>
+          </div>
+          {loadingLayers ? (
+            <div className="text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin inline" /></div>
+          ) : layers.length === 0 ? (
+            <div className="text-xs text-muted-foreground border border-dashed border-border rounded-xl p-6 text-center">
+              Nenhuma camada sincronizada ainda. Use "Sincronizar como camada" em uma fonte geoespacial acima.
+            </div>
+          ) : (
+            <div className="grid gap-2 md:grid-cols-2">
+              {layers.map((l) => (
+                <div key={l.id} className="rounded-lg border border-border bg-card p-3 flex items-center gap-3">
+                  <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: l.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{l.name}</div>
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span className="font-mono">{l.data_source_key}</span>
+                      <span>·</span>
+                      <span className="capitalize">{l.layer_type}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{l.features_count ?? 0} features</span>
+                      {l.last_sync_at && (<><span>·</span><span>{new Date(l.last_sync_at).toLocaleString("pt-BR")}</span></>)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateLayer.mutate({ id: l.id, patch: { visible_to_users: !l.visible_to_users } })}
+                    className={cn("h-8 w-8 grid place-items-center rounded-md border", l.visible_to_users ? "border-success/40 text-success" : "border-border text-muted-foreground")}
+                    aria-label={l.visible_to_users ? "Visível" : "Oculta"}
+                    title={l.visible_to_users ? "Visível para usuários" : "Oculta dos usuários"}
+                  >
+                    {l.visible_to_users ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    onClick={async () => { if (confirm(`Remover camada "${l.name}"?`)) { try { await deleteLayer.mutateAsync(l.id); toast.success("Camada removida"); } catch (e) { toast.error((e as Error).message); } } }}
+                    className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Simulated sync modal */}
