@@ -228,8 +228,10 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
+  const mapHostRef = useRef<HTMLDivElement | null>(null);
+
   return (
-    <div className="relative h-full w-full">
+    <div ref={mapHostRef} className="geoterra-map-host relative h-full w-full">
       <MapContainer
         center={[-14.235, -51.9253]}
         zoom={4}
