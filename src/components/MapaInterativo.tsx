@@ -7,6 +7,7 @@ import { ImovelPanel } from "./ImovelPanel";
 import { PropertyForm } from "./PropertyForm";
 import { LayerFeaturePanel } from "./LayerFeaturePanel";
 import { LayerControl } from "./LayerControl";
+import { PlaceSearch } from "./PlaceSearch";
 import { MapLegend } from "./MapLegend";
 import { useAuth } from "@/lib/auth";
 import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
