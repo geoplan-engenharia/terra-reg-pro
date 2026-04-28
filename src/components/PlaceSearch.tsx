@@ -94,12 +94,8 @@ export function PlaceSearch({
           headers: { Accept: "application/json" },
         });
         if (!res.ok) throw new Error("search failed");
-        const data = (await res.json()) as (NominatimItem & {
-          class?: string;
-          type?: string;
-          address?: { city?: string; town?: string; village?: string; municipality?: string; state?: string; country?: string };
-        })[];
-        // Filtra apenas municípios (city/town/village/municipality) e estados
+        const data = (await res.json()) as NominatimItem[];
+        // Filtra apenas municípios e estados
         const filtered = data.filter((d) => {
           const t = d.type ?? "";
           const c = d.class ?? "";
@@ -107,8 +103,18 @@ export function PlaceSearch({
             c === "boundary" ||
             ["city", "town", "village", "municipality", "administrative", "state"].includes(t)
           );
-        }).slice(0, 8);
-        setResults(filtered);
+        });
+        // Deduplica por label "Cidade, UF"
+        const seen = new Set<string>();
+        const unique: NominatimItem[] = [];
+        for (const item of filtered) {
+          const label = formatPlaceLabel(item).toLowerCase();
+          if (seen.has(label)) continue;
+          seen.add(label);
+          unique.push(item);
+          if (unique.length >= 8) break;
+        }
+        setResults(unique);
         setOpen(true);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
