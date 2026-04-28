@@ -162,6 +162,20 @@ export function MapaInterativo() {
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer } | null>(null);
+  const [basemap, setBasemap] = useState<BasemapId>(() => {
+    if (typeof window === "undefined") return "satellite";
+    try {
+      const raw = window.localStorage.getItem(BASEMAP_PREFS_KEY) as BasemapId | null;
+      return raw && BASEMAPS[raw] ? raw : "satellite";
+    } catch {
+      return "satellite";
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.setItem(BASEMAP_PREFS_KEY, basemap); } catch { /* ignore */ }
+  }, [basemap]);
 
   // Persist layer state
   useEffect(() => {
