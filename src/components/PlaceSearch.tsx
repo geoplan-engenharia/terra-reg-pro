@@ -185,10 +185,10 @@ export function PlaceSearch({
               key={r.place_id}
               type="button"
               onClick={() => handleSelect(r)}
-              className="w-full text-left px-3 py-2 text-xs hover:bg-accent/10 border-b border-border last:border-b-0 flex items-start gap-2"
+              className="w-full text-left px-3 py-2 text-xs hover:bg-accent/10 border-b border-border last:border-b-0 flex items-center gap-2"
             >
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-              <span className="line-clamp-2">{r.display_name}</span>
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{formatPlaceLabel(r)}</span>
             </button>
           ))}
         </div>
