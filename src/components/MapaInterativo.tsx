@@ -297,6 +297,16 @@ export function MapaInterativo() {
 
       <div className="absolute top-4 left-4 w-80 max-h-[calc(100%-2rem)] flex flex-col gap-3 z-[999]">
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
+          <PlaceSearch
+            onSelect={(place) => {
+              if (place.bbox) {
+                const [s, n, w, e] = place.bbox;
+                setFlyBounds([[s, w], [n, e]] as L.LatLngBoundsExpression);
+              } else {
+                setFlyTarget([place.lat, place.lon]);
+              }
+            }}
+          />
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
