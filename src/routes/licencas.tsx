@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import type { EnvironmentalLicense } from "@/lib/types";
+import { useGuardTrial } from "@/components/TrialGuard";
 
 export const Route = createFileRoute("/licencas")({
   head: () => ({ meta: [{ title: "Licenças Ambientais — GeoTerra" }] }),
