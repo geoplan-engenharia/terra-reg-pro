@@ -236,9 +236,19 @@ export function MapaInterativo() {
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={basemap}
+          attribution={BASEMAPS[basemap].attribution}
+          url={BASEMAPS[basemap].url}
+          maxZoom={BASEMAPS[basemap].maxZoom ?? 19}
         />
+        {BASEMAPS[basemap].overlayLabels && (
+          <TileLayer
+            key={basemap + ":labels"}
+            url={BASEMAPS[basemap].overlayLabels!}
+            attribution=""
+            maxZoom={BASEMAPS[basemap].maxZoom ?? 19}
+          />
+        )}
         <FlyTo target={flyTarget} />
         <FitBoundsTo bounds={flyBounds} />
 
