@@ -501,7 +501,7 @@ export function MapTools({
 
       {/* Toolbar UI lives outside map but we need a portal-free approach via map container's parent */}
       <ToolbarPortal>
-        <div className="absolute top-4 right-44 z-[1000] flex flex-col gap-1.5 rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-1.5" data-exclude="1">
+        <div className="absolute top-20 right-4 z-[1000] flex flex-col gap-1.5 rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-1.5" data-exclude="1">
           <ToolBtn
             title="Medir distância"
             active={mode === "measure-distance"}
