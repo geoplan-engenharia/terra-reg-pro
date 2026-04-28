@@ -33,6 +33,7 @@ function getNivel(dias: number | null) {
 function Licencas() {
   const { canEditLicenses } = useAuth();
   const { data: licencas = [], isLoading } = useLicenses();
+  const guardTrial = useGuardTrial();
   const [editing, setEditing] = useState<EnvironmentalLicense | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
