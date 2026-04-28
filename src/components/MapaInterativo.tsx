@@ -44,6 +44,7 @@ function colorForProperty(p: RuralProperty): string {
 
 export function MapaInterativo() {
   const { canEditProperties } = useAuth();
+  const guardTrial = useGuardTrial();
   const { data: properties = [], isLoading } = useProperties();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [camadas, setCamadas] = useState<Camada[]>(camadasIniciais);

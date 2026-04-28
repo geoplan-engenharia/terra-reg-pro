@@ -36,7 +36,7 @@ function Licencas() {
   const [modalOpen, setModalOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  const openNew = () => { setEditing(null); setModalOpen(true); };
+  const openNew = () => { if (guardTrial()) return; setEditing(null); setModalOpen(true); };
   const openEdit = (l: EnvironmentalLicense) => { setEditing(l); setModalOpen(true); setDetailId(null); };
 
   return (
