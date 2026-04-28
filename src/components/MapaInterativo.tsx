@@ -159,6 +159,7 @@ export function MapaInterativo() {
     }
   });
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
+  const [flyZoom, setFlyZoom] = useState<number | undefined>(undefined);
   const [flyBounds, setFlyBounds] = useState<L.LatLngBoundsExpression | null>(null);
   const [busca, setBusca] = useState("");
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
