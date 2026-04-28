@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap, GeoJSON } from "react-leaflet";
 import L from "leaflet";
+import { MapTools } from "./MapTools";
 import { useProperties } from "@/lib/queries";
 import type { RuralProperty } from "@/lib/types";
 import { ImovelPanel } from "./ImovelPanel";
