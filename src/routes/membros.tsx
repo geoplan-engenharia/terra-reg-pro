@@ -8,6 +8,7 @@ import { Mail, UserPlus, Copy, ShieldCheck, Loader2, X, Users } from "lucide-rea
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlanLimitNotice } from "@/components/PlanLimitNotice";
+import { useGuardTrial } from "@/components/TrialGuard";
 
 export const Route = createFileRoute("/membros")({
   head: () => ({ meta: [{ title: "Membros & Convites — GeoTerra" }] }),
@@ -24,6 +25,7 @@ function MembrosPage() {
   const { data: members = [], isLoading: loadingMem } = useOrgMembers();
   const create = useCreateInvite();
   const revoke = useRevokeInvite();
+  const guardTrial = useGuardTrial();
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AppRole>("tecnico");
@@ -41,6 +43,7 @@ function MembrosPage() {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
+    if (guardTrial()) return;
     try {
       await create.mutateAsync({ email, role, organization_id: profile.organization_id });
       toast.success("Convite criado. Compartilhe o link com a pessoa.");
