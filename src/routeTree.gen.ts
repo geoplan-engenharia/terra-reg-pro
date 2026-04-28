@@ -22,8 +22,8 @@ import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AlertasRouteImport } from './routes/alertas'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminOrganizacoesRouteImport } from './routes/admin.organizacoes'
@@ -97,14 +97,14 @@ const AlertasRoute = AlertasRouteImport.update({
   path: '/alertas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
@@ -145,7 +145,6 @@ const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -166,10 +165,10 @@ export interface FileRoutesByFullPath {
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -190,11 +189,11 @@ export interface FileRoutesByTo {
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -215,12 +214,12 @@ export interface FileRoutesById {
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
@@ -241,10 +240,10 @@ export interface FileRouteTypes {
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
@@ -265,10 +264,10 @@ export interface FileRouteTypes {
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
+    | '/admin'
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
@@ -289,11 +288,11 @@ export interface FileRouteTypes {
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
@@ -308,6 +307,7 @@ export interface RootRouteChildren {
   RegrasDiagnosticoRoute: typeof RegrasDiagnosticoRoute
   SignupRoute: typeof SignupRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -403,18 +403,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/usuarios': {
@@ -469,29 +469,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminBugsRoute: typeof AdminBugsRoute
-  AdminFinanceiroRoute: typeof AdminFinanceiroRoute
-  AdminFontesDadosRoute: typeof AdminFontesDadosRoute
-  AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
-  AdminPlanosRoute: typeof AdminPlanosRoute
-  AdminUsuariosRoute: typeof AdminUsuariosRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminBugsRoute: AdminBugsRoute,
-  AdminFinanceiroRoute: AdminFinanceiroRoute,
-  AdminFontesDadosRoute: AdminFontesDadosRoute,
-  AdminOrganizacoesRoute: AdminOrganizacoesRoute,
-  AdminPlanosRoute: AdminPlanosRoute,
-  AdminUsuariosRoute: AdminUsuariosRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
@@ -506,7 +485,17 @@ const rootRouteChildren: RootRouteChildren = {
   RegrasDiagnosticoRoute: RegrasDiagnosticoRoute,
   SignupRoute: SignupRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

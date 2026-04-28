@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { usePlatformOverview } from "@/lib/admin-queries";
 import { Building2, Users, Map, FileCheck2, DollarSign, Loader2, TrendingUp, AlertCircle } from "lucide-react";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin — Visão geral" }] }),
   component: AdminDashboardPage,
 });
