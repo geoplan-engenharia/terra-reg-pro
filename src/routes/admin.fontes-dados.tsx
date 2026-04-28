@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useDataSources, useUpsertDataSource, useDeleteDataSource } from "@/lib/queries";
-import type { DataSource, DataSourceStatus } from "@/lib/types";
+import { useDataLayers, useSyncDataLayer, useUpdateLayer, useDeleteLayer, type LayerType } from "@/lib/layer-queries";
+import type { DataSource, DataSourceStatus, DataSourceKind } from "@/lib/types";
 import { useMemo, useState } from "react";
-import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Sparkles } from "lucide-react";
+import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Sparkles, Layers, Eye, EyeOff, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SimulatedSyncModal } from "@/components/SimulatedSyncModal";
@@ -44,6 +45,7 @@ interface FormState {
   description: string;
   category: string;
   source_type: string;
+  source_kind: DataSourceKind;
   endpoint_url: string;
   update_frequency: string;
   status: DataSourceStatus;
@@ -56,20 +58,59 @@ const emptyForm: FormState = {
   description: "",
   category: "",
   source_type: "",
+  source_kind: "geoespacial",
   endpoint_url: "",
   update_frequency: "",
   status: "planejada",
   enabled: true,
 };
 
+const layerTypeColors: Record<LayerType, string> = {
+  car: "#5fbb6f",
+  sigef: "#3b9bff",
+  embargo: "#f4a02b",
+  desmatamento: "#e85d4a",
+  uso_solo: "#a78bfa",
+  outros: "#94a3b8",
+};
+
+function inferLayerType(source: DataSource): LayerType {
+  const k = source.key.toLowerCase();
+  if (k.includes("car")) return "car";
+  if (k.includes("sigef")) return "sigef";
+  if (k.includes("ibama") || k.includes("embargo")) return "embargo";
+  if (k.includes("deter") || k.includes("prodes") || k.includes("desmat")) return "desmatamento";
+  if (k.includes("mapbiomas") || k.includes("uso")) return "uso_solo";
+  return "outros";
+}
+
 function DataSourcesPage() {
   const { data: sources = [], isLoading } = useDataSources();
+  const { data: layers = [], isLoading: loadingLayers } = useDataLayers();
   const upsert = useUpsertDataSource();
   const remove = useDeleteDataSource();
+  const syncLayer = useSyncDataLayer();
+  const updateLayer = useUpdateLayer();
+  const deleteLayer = useDeleteLayer();
 
   const [editing, setEditing] = useState<FormState | null>(null);
   const [statusFilter, setStatusFilter] = useState<DataSourceStatus | "all">("all");
   const [simSource, setSimSource] = useState<DataSource | null>(null);
+
+  const handleSyncAsLayer = async (s: DataSource) => {
+    try {
+      const lt = inferLayerType(s);
+      await syncLayer.mutateAsync({
+        data_source_key: s.key,
+        layer_type: lt,
+        layer_name: s.name,
+        color: layerTypeColors[lt],
+      });
+      toast.success(`Camada "${s.name}" sincronizada com features simuladas.`);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
 
   const filtered = useMemo(
     () => (statusFilter === "all" ? sources : sources.filter((s) => s.status === statusFilter)),
@@ -93,6 +134,7 @@ function DataSourcesPage() {
       description: s.description ?? "",
       category: s.category ?? "",
       source_type: s.source_type ?? "",
+      source_kind: s.source_kind ?? "geoespacial",
       endpoint_url: s.endpoint_url ?? "",
       update_frequency: s.update_frequency ?? "",
       status: s.status,
@@ -110,6 +152,7 @@ function DataSourcesPage() {
         description: editing.description || null,
         category: editing.category || null,
         source_type: editing.source_type || null,
+        source_kind: editing.source_kind,
         endpoint_url: editing.endpoint_url || null,
         update_frequency: editing.update_frequency || null,
         status: editing.status,
@@ -242,13 +285,33 @@ function DataSourcesPage() {
                     </a>
                   )}
 
-                  <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
-                    <button
-                      onClick={() => handleSync(s)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" /> Sincronização simulada
-                    </button>
+                  <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
+                    {s.source_kind === "documental" ? (
+                      <button
+                        onClick={() => handleSync(s)}
+                        className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> Consulta documental simulada
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleSyncAsLayer(s)}
+                          disabled={syncLayer.isPending}
+                          className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/30 h-8 text-xs hover:bg-primary/20 disabled:opacity-60"
+                        >
+                          {syncLayer.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layers className="h-3.5 w-3.5" />}
+                          Sincronizar como camada
+                        </button>
+                        <button
+                          onClick={() => handleSync(s)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 px-2.5 text-xs hover:bg-accent/10"
+                          title="Consulta pontual simulada"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => openEdit(s)}
                       className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent/10"
@@ -269,6 +332,55 @@ function DataSourcesPage() {
             })}
           </div>
         )}
+
+        {/* Synced layers panel */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Camadas geoespaciais sincronizadas</h2>
+            <span className="text-[11px] text-muted-foreground">({layers.length})</span>
+          </div>
+          {loadingLayers ? (
+            <div className="text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin inline" /></div>
+          ) : layers.length === 0 ? (
+            <div className="text-xs text-muted-foreground border border-dashed border-border rounded-xl p-6 text-center">
+              Nenhuma camada sincronizada ainda. Use "Sincronizar como camada" em uma fonte geoespacial acima.
+            </div>
+          ) : (
+            <div className="grid gap-2 md:grid-cols-2">
+              {layers.map((l) => (
+                <div key={l.id} className="rounded-lg border border-border bg-card p-3 flex items-center gap-3">
+                  <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: l.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{l.name}</div>
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span className="font-mono">{l.data_source_key}</span>
+                      <span>·</span>
+                      <span className="capitalize">{l.layer_type}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{l.features_count ?? 0} features</span>
+                      {l.last_sync_at && (<><span>·</span><span>{new Date(l.last_sync_at).toLocaleString("pt-BR")}</span></>)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateLayer.mutate({ id: l.id, patch: { visible_to_users: !l.visible_to_users } })}
+                    className={cn("h-8 w-8 grid place-items-center rounded-md border", l.visible_to_users ? "border-success/40 text-success" : "border-border text-muted-foreground")}
+                    aria-label={l.visible_to_users ? "Visível" : "Oculta"}
+                    title={l.visible_to_users ? "Visível para usuários" : "Oculta dos usuários"}
+                  >
+                    {l.visible_to_users ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    onClick={async () => { if (confirm(`Remover camada "${l.name}"?`)) { try { await deleteLayer.mutateAsync(l.id); toast.success("Camada removida"); } catch (e) { toast.error((e as Error).message); } } }}
+                    className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Simulated sync modal */}
@@ -316,6 +428,17 @@ function DataSourcesPage() {
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                   className="mt-1 w-full rounded-md border border-input bg-input/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Natureza da fonte</label>
+                <select
+                  value={editing.source_kind}
+                  onChange={(e) => setEditing({ ...editing, source_kind: e.target.value as DataSourceKind })}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-input/40 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="geoespacial">Geoespacial (camada no mapa)</option>
+                  <option value="documental">Documental (consulta por CPF/CNPJ/matrícula)</option>
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -139,6 +139,8 @@ export interface EnvironmentalAnalysis {
   analyzed_at: string;
 }
 
+export type DataSourceKind = "geoespacial" | "documental";
+
 export interface DataSource {
   id: string;
   key: string;
@@ -146,6 +148,7 @@ export interface DataSource {
   description: string | null;
   category: string | null;
   source_type: string | null;
+  source_kind: DataSourceKind;
   endpoint_url: string | null;
   update_frequency: string | null;
   last_sync_at: string | null;
