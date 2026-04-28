@@ -109,6 +109,101 @@ export type Database = {
           },
         ]
       }
+      data_layer_features: {
+        Row: {
+          area_ha: number | null
+          created_at: string
+          data_source_key: string
+          external_id: string | null
+          geometry_geojson: Json
+          id: string
+          layer_id: string
+          municipality: string | null
+          properties_json: Json
+          source_updated_at: string | null
+          uf: string | null
+        }
+        Insert: {
+          area_ha?: number | null
+          created_at?: string
+          data_source_key: string
+          external_id?: string | null
+          geometry_geojson: Json
+          id?: string
+          layer_id: string
+          municipality?: string | null
+          properties_json?: Json
+          source_updated_at?: string | null
+          uf?: string | null
+        }
+        Update: {
+          area_ha?: number | null
+          created_at?: string
+          data_source_key?: string
+          external_id?: string | null
+          geometry_geojson?: Json
+          id?: string
+          layer_id?: string
+          municipality?: string | null
+          properties_json?: Json
+          source_updated_at?: string | null
+          uf?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_layer_features_layer_id_fkey"
+            columns: ["layer_id"]
+            isOneToOne: false
+            referencedRelation: "data_layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_layers: {
+        Row: {
+          color: string
+          created_at: string
+          data_source_key: string
+          description: string | null
+          geometry_type: Database["public"]["Enums"]["layer_geometry_type"]
+          id: string
+          last_sync_at: string | null
+          layer_type: Database["public"]["Enums"]["layer_type"]
+          name: string
+          status: Database["public"]["Enums"]["data_layer_status"]
+          updated_at: string
+          visible_to_users: boolean
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          data_source_key: string
+          description?: string | null
+          geometry_type?: Database["public"]["Enums"]["layer_geometry_type"]
+          id?: string
+          last_sync_at?: string | null
+          layer_type?: Database["public"]["Enums"]["layer_type"]
+          name: string
+          status?: Database["public"]["Enums"]["data_layer_status"]
+          updated_at?: string
+          visible_to_users?: boolean
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          data_source_key?: string
+          description?: string | null
+          geometry_type?: Database["public"]["Enums"]["layer_geometry_type"]
+          id?: string
+          last_sync_at?: string | null
+          layer_type?: Database["public"]["Enums"]["layer_type"]
+          name?: string
+          status?: Database["public"]["Enums"]["data_layer_status"]
+          updated_at?: string
+          visible_to_users?: boolean
+        }
+        Relationships: []
+      }
       data_sources: {
         Row: {
           category: string | null
@@ -121,6 +216,7 @@ export type Database = {
           key: string
           last_sync_at: string | null
           name: string
+          source_kind: Database["public"]["Enums"]["data_source_kind"]
           source_type: string | null
           status: Database["public"]["Enums"]["data_source_status"]
           update_frequency: string | null
@@ -137,6 +233,7 @@ export type Database = {
           key: string
           last_sync_at?: string | null
           name: string
+          source_kind?: Database["public"]["Enums"]["data_source_kind"]
           source_type?: string | null
           status?: Database["public"]["Enums"]["data_source_status"]
           update_frequency?: string | null
@@ -153,6 +250,7 @@ export type Database = {
           key?: string
           last_sync_at?: string | null
           name?: string
+          source_kind?: Database["public"]["Enums"]["data_source_kind"]
           source_type?: string | null
           status?: Database["public"]["Enums"]["data_source_status"]
           update_frequency?: string | null
@@ -1169,6 +1267,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_layer_feature_as_property: {
+        Args: { _client_id?: string; _feature_id: string; _name?: string }
+        Returns: string
+      }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
       refresh_license_alerts: {
@@ -1183,9 +1285,22 @@ export type Database = {
         Args: { _data_source_key: string; _property_id?: string }
         Returns: string
       }
+      search_documental_sources: {
+        Args: { _id_type?: string; _identifier: string }
+        Returns: Json
+      }
       seed_default_diagnostic_rules: {
         Args: { _org_id: string }
         Returns: undefined
+      }
+      sync_data_layer_simulated: {
+        Args: {
+          _color?: string
+          _data_source_key: string
+          _layer_name?: string
+          _layer_type?: Database["public"]["Enums"]["layer_type"]
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -1199,6 +1314,8 @@ export type Database = {
         | "suspenso"
         | "nao_cadastrado"
       confiabilidade: "alta" | "media" | "baixa"
+      data_layer_status: "ativa" | "planejada" | "indisponivel"
+      data_source_kind: "geoespacial" | "documental"
       data_source_status: "planejada" | "ativa" | "instavel" | "indisponivel"
       diagnostic_kind:
         | "regular"
@@ -1210,6 +1327,14 @@ export type Database = {
         | "documental"
         | "outro"
       invite_status: "pendente" | "aceito" | "expirado" | "revogado"
+      layer_geometry_type: "polygon" | "multipolygon" | "point" | "line"
+      layer_type:
+        | "car"
+        | "sigef"
+        | "embargo"
+        | "desmatamento"
+        | "uso_solo"
+        | "outros"
       license_alert_kind: "180_dias" | "90_dias" | "30_dias" | "vencida"
       license_status:
         | "ativa"
@@ -1378,6 +1503,8 @@ export const Constants = {
         "nao_cadastrado",
       ],
       confiabilidade: ["alta", "media", "baixa"],
+      data_layer_status: ["ativa", "planejada", "indisponivel"],
+      data_source_kind: ["geoespacial", "documental"],
       data_source_status: ["planejada", "ativa", "instavel", "indisponivel"],
       diagnostic_kind: [
         "regular",
@@ -1390,6 +1517,15 @@ export const Constants = {
         "outro",
       ],
       invite_status: ["pendente", "aceito", "expirado", "revogado"],
+      layer_geometry_type: ["polygon", "multipolygon", "point", "line"],
+      layer_type: [
+        "car",
+        "sigef",
+        "embargo",
+        "desmatamento",
+        "uso_solo",
+        "outros",
+      ],
       license_alert_kind: ["180_dias", "90_dias", "30_dias", "vencida"],
       license_status: [
         "ativa",
