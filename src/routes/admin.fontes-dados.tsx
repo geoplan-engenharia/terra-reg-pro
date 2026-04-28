@@ -86,12 +86,31 @@ function inferLayerType(source: DataSource): LayerType {
 
 function DataSourcesPage() {
   const { data: sources = [], isLoading } = useDataSources();
+  const { data: layers = [], isLoading: loadingLayers } = useDataLayers();
   const upsert = useUpsertDataSource();
   const remove = useDeleteDataSource();
+  const syncLayer = useSyncDataLayer();
+  const updateLayer = useUpdateLayer();
+  const deleteLayer = useDeleteLayer();
 
   const [editing, setEditing] = useState<FormState | null>(null);
   const [statusFilter, setStatusFilter] = useState<DataSourceStatus | "all">("all");
   const [simSource, setSimSource] = useState<DataSource | null>(null);
+
+  const handleSyncAsLayer = async (s: DataSource) => {
+    try {
+      const lt = inferLayerType(s);
+      await syncLayer.mutateAsync({
+        data_source_key: s.key,
+        layer_type: lt,
+        layer_name: s.name,
+        color: layerTypeColors[lt],
+      });
+      toast.success(`Camada "${s.name}" sincronizada com features simuladas.`);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
 
   const filtered = useMemo(
     () => (statusFilter === "all" ? sources : sources.filter((s) => s.status === statusFilter)),
