@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useDataSources, useUpsertDataSource, useDeleteDataSource } from "@/lib/queries";
-import type { DataSource, DataSourceStatus } from "@/lib/types";
+import { useDataLayers, useSyncDataLayer, useUpdateLayer, useDeleteLayer, type LayerType } from "@/lib/layer-queries";
+import type { DataSource, DataSourceStatus, DataSourceKind } from "@/lib/types";
 import { useMemo, useState } from "react";
-import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Sparkles } from "lucide-react";
+import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Sparkles, Layers, Eye, EyeOff, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SimulatedSyncModal } from "@/components/SimulatedSyncModal";
