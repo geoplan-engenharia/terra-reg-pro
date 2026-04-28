@@ -205,7 +205,6 @@ function ConfiguracoesPage() {
             </header>
             <div className="p-3 space-y-1.5">
               <ShortcutLink to="/precos" icon={Tag} title="Planos e preços" desc="Compare planos e faça upgrade." />
-              <ShortcutLink to="/fontes-dados" icon={Database} title="Fontes de dados" desc="CAR, SIGEF, MapBiomas, DETER, IBAMA." />
               <ShortcutLink to="/regras-diagnostico" icon={ShieldCheck} title="Regras de diagnóstico" desc="Configure as regras automáticas." />
               <ShortcutLink to="/membros" icon={Users} title="Membros & convites" desc="Gerencie acessos do escritório." />
             </div>
@@ -294,7 +293,7 @@ function ShortcutLink({
   title,
   desc,
 }: {
-  to: "/precos" | "/fontes-dados" | "/regras-diagnostico" | "/membros";
+  to: "/precos" | "/regras-diagnostico" | "/membros";
   icon: React.ElementType;
   title: string;
   desc: string;

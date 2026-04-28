@@ -19,7 +19,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LicencasRouteImport } from './routes/licencas'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as HistoricoRouteImport } from './routes/historico'
-import { Route as FontesDadosRouteImport } from './routes/fontes-dados'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AlertasRouteImport } from './routes/alertas'
@@ -28,6 +27,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminOrganizacoesRouteImport } from './routes/admin.organizacoes'
+import { Route as AdminFontesDadosRouteImport } from './routes/admin.fontes-dados'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminBugsRouteImport } from './routes/admin.bugs'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
@@ -82,11 +82,6 @@ const HistoricoRoute = HistoricoRouteImport.update({
   path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FontesDadosRoute = FontesDadosRouteImport.update({
-  id: '/fontes-dados',
-  path: '/fontes-dados',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
@@ -127,6 +122,11 @@ const AdminOrganizacoesRoute = AdminOrganizacoesRouteImport.update({
   path: '/organizacoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFontesDadosRoute = AdminFontesDadosRouteImport.update({
+  id: '/fontes-dados',
+  path: '/fontes-dados',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
@@ -149,7 +149,6 @@ export interface FileRoutesByFullPath {
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
   '/landing': typeof LandingRoute
   '/licencas': typeof LicencasRoute
@@ -163,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/admin/bugs': typeof AdminBugsRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
+  '/admin/fontes-dados': typeof AdminFontesDadosRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -173,7 +173,6 @@ export interface FileRoutesByTo {
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
   '/landing': typeof LandingRoute
   '/licencas': typeof LicencasRoute
@@ -187,6 +186,7 @@ export interface FileRoutesByTo {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/admin/bugs': typeof AdminBugsRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
+  '/admin/fontes-dados': typeof AdminFontesDadosRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -198,7 +198,6 @@ export interface FileRoutesById {
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/fontes-dados': typeof FontesDadosRoute
   '/historico': typeof HistoricoRoute
   '/landing': typeof LandingRoute
   '/licencas': typeof LicencasRoute
@@ -212,6 +211,7 @@ export interface FileRoutesById {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/admin/bugs': typeof AdminBugsRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
+  '/admin/fontes-dados': typeof AdminFontesDadosRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -224,7 +224,6 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
-    | '/fontes-dados'
     | '/historico'
     | '/landing'
     | '/licencas'
@@ -238,6 +237,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/admin/bugs'
     | '/admin/financeiro'
+    | '/admin/fontes-dados'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -248,7 +248,6 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
-    | '/fontes-dados'
     | '/historico'
     | '/landing'
     | '/licencas'
@@ -262,6 +261,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/admin/bugs'
     | '/admin/financeiro'
+    | '/admin/fontes-dados'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -272,7 +272,6 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
-    | '/fontes-dados'
     | '/historico'
     | '/landing'
     | '/licencas'
@@ -286,6 +285,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/admin/bugs'
     | '/admin/financeiro'
+    | '/admin/fontes-dados'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -297,7 +297,6 @@ export interface RootRouteChildren {
   AlertasRoute: typeof AlertasRoute
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
-  FontesDadosRoute: typeof FontesDadosRoute
   HistoricoRoute: typeof HistoricoRoute
   LandingRoute: typeof LandingRoute
   LicencasRoute: typeof LicencasRoute
@@ -383,13 +382,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/fontes-dados': {
-      id: '/fontes-dados'
-      path: '/fontes-dados'
-      fullPath: '/fontes-dados'
-      preLoaderRoute: typeof FontesDadosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/configuracoes': {
       id: '/configuracoes'
       path: '/configuracoes'
@@ -446,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrganizacoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/fontes-dados': {
+      id: '/admin/fontes-dados'
+      path: '/fontes-dados'
+      fullPath: '/admin/fontes-dados'
+      preLoaderRoute: typeof AdminFontesDadosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/financeiro': {
       id: '/admin/financeiro'
       path: '/financeiro'
@@ -473,6 +472,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminBugsRoute: typeof AdminBugsRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
+  AdminFontesDadosRoute: typeof AdminFontesDadosRoute
   AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
@@ -481,6 +481,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBugsRoute: AdminBugsRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
+  AdminFontesDadosRoute: AdminFontesDadosRoute,
   AdminOrganizacoesRoute: AdminOrganizacoesRoute,
   AdminPlanosRoute: AdminPlanosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
@@ -494,7 +495,6 @@ const rootRouteChildren: RootRouteChildren = {
   AlertasRoute: AlertasRoute,
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
-  FontesDadosRoute: FontesDadosRoute,
   HistoricoRoute: HistoricoRoute,
   LandingRoute: LandingRoute,
   LicencasRoute: LicencasRoute,

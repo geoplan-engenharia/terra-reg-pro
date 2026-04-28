@@ -1,19 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppLayout } from "@/components/AppLayout";
-import { useAuth } from "@/lib/auth";
+import { AdminLayout } from "@/components/AdminLayout";
 import { useDataSources, useUpsertDataSource, useDeleteDataSource } from "@/lib/queries";
 import type { DataSource, DataSourceStatus } from "@/lib/types";
 import { useMemo, useState } from "react";
-import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Lock, Sparkles } from "lucide-react";
+import { Database, Plus, RefreshCw, Pencil, Trash2, X, Loader2, ExternalLink, Calendar, Tag, Activity, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SimulatedSyncModal } from "@/components/SimulatedSyncModal";
 
-export const Route = createFileRoute("/fontes-dados")({
+export const Route = createFileRoute("/admin/fontes-dados")({
   head: () => ({
     meta: [
-      { title: "Fontes de Dados — GeoTerra" },
-      { name: "description", content: "Catálogo de fontes geoespaciais e estrutura para integrações futuras com CAR, SIGEF, MapBiomas, PRODES, DETER e IBAMA." },
+      { title: "Fontes de Dados — Admin GeoTerra" },
+      { name: "description", content: "Catálogo de fontes geoespaciais — gerenciado pelo super administrador da plataforma." },
     ],
   }),
   component: DataSourcesPage,
@@ -64,8 +63,6 @@ const emptyForm: FormState = {
 };
 
 function DataSourcesPage() {
-  const { isAdmin, hasAnyRole } = useAuth();
-  const canRunSync = hasAnyRole(["admin", "tecnico"]);
   const { data: sources = [], isLoading } = useDataSources();
   const upsert = useUpsertDataSource();
   const remove = useDeleteDataSource();
@@ -85,9 +82,7 @@ function DataSourcesPage() {
     return c;
   }, [sources]);
 
-  const handleSync = (s: DataSource) => {
-    setSimSource(s);
-  };
+  const handleSync = (s: DataSource) => setSimSource(s);
 
   const openNew = () => setEditing({ ...emptyForm });
   const openEdit = (s: DataSource) =>
@@ -138,7 +133,7 @@ function DataSourcesPage() {
   };
 
   return (
-    <AppLayout title="Fontes de Dados" subtitle="Catálogo de integrações geoespaciais — preparado para conexão futura">
+    <AdminLayout title="Fontes de Dados" subtitle="Catálogo global de integrações geoespaciais da plataforma">
       <div className="p-6 space-y-5">
         {/* Stats */}
         <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
@@ -174,18 +169,12 @@ function DataSourcesPage() {
           <p className="text-xs text-muted-foreground">
             {filtered.length} fonte{filtered.length !== 1 ? "s" : ""} listada{filtered.length !== 1 ? "s" : ""}
           </p>
-          {isAdmin ? (
-            <button
-              onClick={openNew}
-              className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:opacity-90 shadow-glow"
-            >
-              <Plus className="h-4 w-4" /> Nova fonte
-            </button>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Lock className="h-3 w-3" /> Apenas administradores podem editar
-            </span>
-          )}
+          <button
+            onClick={openNew}
+            className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:opacity-90 shadow-glow"
+          >
+            <Plus className="h-4 w-4" /> Nova fonte
+          </button>
         </div>
 
         {/* List */}
@@ -256,30 +245,24 @@ function DataSourcesPage() {
                   <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
                     <button
                       onClick={() => handleSync(s)}
-                      disabled={!canRunSync}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={canRunSync ? "Executar sincronização simulada" : "Apenas admin/técnico"}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
                     >
                       <Sparkles className="h-3.5 w-3.5" /> Sincronização simulada
                     </button>
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => openEdit(s)}
-                          className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent/10"
-                          aria-label="Editar"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(s)}
-                          className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"
-                          aria-label="Remover"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={() => openEdit(s)}
+                      className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent/10"
+                      aria-label="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(s)}
+                      className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"
+                      aria-label="Remover"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -290,11 +273,11 @@ function DataSourcesPage() {
 
       {/* Simulated sync modal */}
       {simSource && (
-        <SimulatedSyncModal source={simSource} onClose={() => setSimSource(null)} canRun={canRunSync} />
+        <SimulatedSyncModal source={simSource} onClose={() => setSimSource(null)} canRun={true} />
       )}
 
       {/* Edit modal */}
-      {editing && isAdmin && (
+      {editing && (
         <div className="fixed inset-0 z-[2000] grid place-items-center bg-background/80 backdrop-blur-sm p-4">
           <form onSubmit={submit} className="w-full max-w-lg rounded-xl border border-border bg-card p-5 space-y-4 max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between">
@@ -418,6 +401,6 @@ function DataSourcesPage() {
           </form>
         </div>
       )}
-    </AppLayout>
+    </AdminLayout>
   );
 }
