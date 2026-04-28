@@ -123,7 +123,7 @@ export function PlaceSearch({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Buscar cidade, estado, endereço..."
+          placeholder="Buscar município ou estado..."
           className="h-9 w-full rounded-md border border-input bg-input/40 pl-9 pr-9 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {loading ? (
