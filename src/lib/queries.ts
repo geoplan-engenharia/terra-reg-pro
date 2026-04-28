@@ -46,6 +46,33 @@ export function useCreateClient() {
   });
 }
 
+export function useUpdateClient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Client> }) => {
+      const { data, error } = await supabase.from("clients").update(patch).eq("id", id).select().single();
+      if (error) throw error;
+      return data as Client;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
+  });
+}
+
+export function useDeleteClient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("clients").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+    },
+  });
+}
+
 // =====================
 // PROPERTIES
 // =====================
