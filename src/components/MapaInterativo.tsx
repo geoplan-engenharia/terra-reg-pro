@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap, GeoJSON } from "react-leaflet";
 import L from "leaflet";
+import { MapTools } from "./MapTools";
 import { useProperties } from "@/lib/queries";
 import type { RuralProperty } from "@/lib/types";
 import { ImovelPanel } from "./ImovelPanel";
@@ -50,11 +51,11 @@ const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: str
   },
 };
 
-function FlyTo({ target }: { target: [number, number] | null }) {
+function FlyTo({ target, zoom }: { target: [number, number] | null; zoom?: number }) {
   const map = useMap();
   useEffect(() => {
-    if (target) map.flyTo(target, 14, { duration: 1.2 });
-  }, [target, map]);
+    if (target) map.flyTo(target, zoom ?? 14, { duration: 1.2 });
+  }, [target, map, zoom]);
   return null;
 }
 
@@ -158,6 +159,7 @@ export function MapaInterativo() {
     }
   });
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
+  const [flyZoom, setFlyZoom] = useState<number | undefined>(undefined);
   const [flyBounds, setFlyBounds] = useState<L.LatLngBoundsExpression | null>(null);
   const [busca, setBusca] = useState("");
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
@@ -227,8 +229,10 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
+  const mapHostRef = useRef<HTMLDivElement | null>(null);
+
   return (
-    <div className="relative h-full w-full">
+    <div ref={mapHostRef} className="geoterra-map-host relative h-full w-full">
       <MapContainer
         center={[-14.235, -51.9253]}
         zoom={4}
@@ -250,8 +254,18 @@ export function MapaInterativo() {
             maxZoom={BASEMAPS[basemap].maxZoom ?? 19}
           />
         )}
-        <FlyTo target={flyTarget} />
+        <FlyTo target={flyTarget} zoom={flyZoom} />
         <FitBoundsTo bounds={flyBounds} />
+        <MapTools
+          mapContainerRef={mapHostRef}
+          onFlyTo={(lat, lon, zoom) => {
+            setFlyBounds(null);
+            setFlyZoom(zoom);
+            // força novo target mesmo se coords iguais
+            setFlyTarget([lat + Math.random() * 1e-9, lon]);
+          }}
+          onFlyBounds={(b) => setFlyBounds(b)}
+        />
 
         {activeLayersList.map((l) => (
           <LayerRenderer
