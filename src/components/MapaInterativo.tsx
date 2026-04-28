@@ -9,7 +9,7 @@ import { LayerFeaturePanel } from "./LayerFeaturePanel";
 import { LayerControl } from "./LayerControl";
 import { MapLegend } from "./MapLegend";
 import { useAuth } from "@/lib/auth";
-import { ChevronRight, Search, Loader2, Plus } from "lucide-react";
+import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
 import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
@@ -17,6 +17,37 @@ import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
 const LAYER_PREFS_KEY = "geoterra:active-layers";
+const BASEMAP_PREFS_KEY = "geoterra:basemap";
+
+type BasemapId = "satellite" | "hybrid" | "streets" | "topo";
+
+const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: string; maxZoom?: number; overlayLabels?: string }> = {
+  satellite: {
+    label: "Satélite",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, USDA, USGS, AeroGRID, IGN, GIS User Community',
+    maxZoom: 19,
+  },
+  hybrid: {
+    label: "Satélite + rótulos",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+    overlayLabels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+  },
+  streets: {
+    label: "Ruas (OSM)",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  },
+  topo: {
+    label: "Topográfico",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Topo &copy; Esri',
+    maxZoom: 19,
+  },
+};
 
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
@@ -131,6 +162,20 @@ export function MapaInterativo() {
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer } | null>(null);
+  const [basemap, setBasemap] = useState<BasemapId>(() => {
+    if (typeof window === "undefined") return "satellite";
+    try {
+      const raw = window.localStorage.getItem(BASEMAP_PREFS_KEY) as BasemapId | null;
+      return raw && BASEMAPS[raw] ? raw : "satellite";
+    } catch {
+      return "satellite";
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.setItem(BASEMAP_PREFS_KEY, basemap); } catch { /* ignore */ }
+  }, [basemap]);
 
   // Persist layer state
   useEffect(() => {
@@ -191,9 +236,19 @@ export function MapaInterativo() {
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={basemap}
+          attribution={BASEMAPS[basemap].attribution}
+          url={BASEMAPS[basemap].url}
+          maxZoom={BASEMAPS[basemap].maxZoom ?? 19}
         />
+        {BASEMAPS[basemap].overlayLabels && (
+          <TileLayer
+            key={basemap + ":labels"}
+            url={BASEMAPS[basemap].overlayLabels!}
+            attribution=""
+            maxZoom={BASEMAPS[basemap].maxZoom ?? 19}
+          />
+        )}
         <FlyTo target={flyTarget} />
         <FitBoundsTo bounds={flyBounds} />
 
@@ -323,6 +378,25 @@ export function MapaInterativo() {
       </div>
 
       <MapLegend activeLayers={activeLayersList} />
+
+      <div className="absolute top-4 right-4 z-[999] rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-2 flex items-center gap-1">
+        <LayersIcon className="h-3.5 w-3.5 text-muted-foreground ml-1 mr-1" />
+        {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setBasemap(id)}
+            className={cn(
+              "px-2.5 py-1 text-xs rounded-md transition",
+              basemap === id
+                ? "bg-primary text-primary-foreground font-medium"
+                : "text-muted-foreground hover:bg-accent/10"
+            )}
+          >
+            {BASEMAPS[id].label}
+          </button>
+        ))}
+      </div>
 
       {selectedId && !selectedFeature && (
         <ImovelPanel
