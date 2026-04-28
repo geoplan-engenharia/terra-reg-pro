@@ -45,6 +45,7 @@ interface FormState {
   description: string;
   category: string;
   source_type: string;
+  source_kind: DataSourceKind;
   endpoint_url: string;
   update_frequency: string;
   status: DataSourceStatus;
@@ -57,11 +58,31 @@ const emptyForm: FormState = {
   description: "",
   category: "",
   source_type: "",
+  source_kind: "geoespacial",
   endpoint_url: "",
   update_frequency: "",
   status: "planejada",
   enabled: true,
 };
+
+const layerTypeColors: Record<LayerType, string> = {
+  car: "#5fbb6f",
+  sigef: "#3b9bff",
+  embargo: "#f4a02b",
+  desmatamento: "#e85d4a",
+  uso_solo: "#a78bfa",
+  outros: "#94a3b8",
+};
+
+function inferLayerType(source: DataSource): LayerType {
+  const k = source.key.toLowerCase();
+  if (k.includes("car")) return "car";
+  if (k.includes("sigef")) return "sigef";
+  if (k.includes("ibama") || k.includes("embargo")) return "embargo";
+  if (k.includes("deter") || k.includes("prodes") || k.includes("desmat")) return "desmatamento";
+  if (k.includes("mapbiomas") || k.includes("uso")) return "uso_solo";
+  return "outros";
+}
 
 function DataSourcesPage() {
   const { data: sources = [], isLoading } = useDataSources();
