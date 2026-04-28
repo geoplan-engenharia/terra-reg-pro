@@ -254,21 +254,15 @@ export function MapaInterativo() {
             maxZoom={BASEMAPS[basemap].maxZoom ?? 19}
           />
         )}
-        <FlyTo target={flyTarget} />
+        <FlyTo target={flyTarget} zoom={flyZoom} />
         <FitBoundsTo bounds={flyBounds} />
         <MapTools
           mapContainerRef={mapHostRef}
           onFlyTo={(lat, lon, zoom) => {
             setFlyBounds(null);
-            setFlyTarget([lat, lon]);
-            // zoom é aplicado dentro do FlyTo (fixo em 14); para coordenada exata, usamos 15
-            if (zoom != null) {
-              // pequeno hack: forçar via flyTo manual
-              setTimeout(() => {
-                const mapEl = document.querySelector(".leaflet-container") as HTMLElement | null;
-                void mapEl;
-              }, 0);
-            }
+            setFlyZoom(zoom);
+            // força novo target mesmo se coords iguais
+            setFlyTarget([lat + Math.random() * 1e-9, lon]);
           }}
           onFlyBounds={(b) => setFlyBounds(b)}
         />
