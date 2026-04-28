@@ -329,7 +329,7 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
           </div>
         </Section>
 
-
+        {(imovel.notes || imovel.last_consultation_at) && (
           <Section title="Observações" icon={FileText}>
             {imovel.notes && <p className="text-xs text-muted-foreground leading-relaxed">{imovel.notes}</p>}
             {imovel.last_consultation_at && (
