@@ -53,7 +53,7 @@ const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: str
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
   useEffect(() => {
-    if (target) map.flyTo(target, 13, { duration: 1.2 });
+    if (target) map.flyTo(target, 14, { duration: 1.2 });
   }, [target, map]);
   return null;
 }
@@ -164,12 +164,12 @@ export function MapaInterativo() {
   const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer } | null>(null);
   const [basemap, setBasemap] = useState<BasemapId>(() => {
-    if (typeof window === "undefined") return "satellite";
+    if (typeof window === "undefined") return "hybrid";
     try {
       const raw = window.localStorage.getItem(BASEMAP_PREFS_KEY) as BasemapId | null;
-      return raw && BASEMAPS[raw] ? raw : "satellite";
+      return raw && BASEMAPS[raw] ? raw : "hybrid";
     } catch {
-      return "satellite";
+      return "hybrid";
     }
   });
 
