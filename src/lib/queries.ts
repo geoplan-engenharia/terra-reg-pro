@@ -35,9 +35,14 @@ export function useCreateClient() {
     mutationFn: async (input: { name: string; document?: string; email?: string; phone?: string; notes?: string; organization_id: string }) => {
       const { data, error } = await supabase.from("clients").insert(input).select().single();
       if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("organization_onboarding").update({ has_created_client: true }).eq("organization_id", input.organization_id);
       return data as Client;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      qc.invalidateQueries({ queryKey: ["onboarding_progress"] });
+    },
   });
 }
 
@@ -127,9 +132,17 @@ export function useCreateProperty() {
       const { data, error } = await supabase.from("rural_properties").insert(input).select().single();
       if (error) throw error;
       await supabase.rpc("run_property_diagnostics", { _property_id: data.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from("organization_onboarding")
+        .update({ has_created_property: true, has_run_diagnosis: true })
+        .eq("organization_id", input.organization_id);
       return data as RuralProperty;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["properties"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["onboarding_progress"] });
+    },
   });
 }
 

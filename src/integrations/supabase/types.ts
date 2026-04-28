@@ -501,6 +501,42 @@ export type Database = {
           },
         ]
       }
+      organization_onboarding: {
+        Row: {
+          created_at: string
+          has_created_client: boolean
+          has_created_property: boolean
+          has_generated_report: boolean
+          has_run_diagnosis: boolean
+          onboarding_completed_at: string | null
+          onboarding_dismissed: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          has_created_client?: boolean
+          has_created_property?: boolean
+          has_generated_report?: boolean
+          has_run_diagnosis?: boolean
+          onboarding_completed_at?: string | null
+          onboarding_dismissed?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          has_created_client?: boolean
+          has_created_property?: boolean
+          has_generated_report?: boolean
+          has_run_diagnosis?: boolean
+          onboarding_completed_at?: string | null
+          onboarding_dismissed?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organization_subscriptions: {
         Row: {
           billing_cycle: Database["public"]["Enums"]["billing_cycle"]
