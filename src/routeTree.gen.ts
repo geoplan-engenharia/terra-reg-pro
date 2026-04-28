@@ -22,6 +22,7 @@ import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AlertasRouteImport } from './routes/alertas'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
@@ -97,45 +98,50 @@ const AlertasRoute = AlertasRouteImport.update({
   path: '/alertas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
-  id: '/admin/usuarios',
-  path: '/admin/usuarios',
-  getParentRoute: () => rootRouteImport,
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminPlanosRoute = AdminPlanosRouteImport.update({
-  id: '/admin/planos',
-  path: '/admin/planos',
-  getParentRoute: () => rootRouteImport,
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrganizacoesRoute = AdminOrganizacoesRouteImport.update({
-  id: '/admin/organizacoes',
-  path: '/admin/organizacoes',
-  getParentRoute: () => rootRouteImport,
+  id: '/organizacoes',
+  path: '/organizacoes',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminFontesDadosRoute = AdminFontesDadosRouteImport.update({
-  id: '/admin/fontes-dados',
-  path: '/admin/fontes-dados',
-  getParentRoute: () => rootRouteImport,
+  id: '/fontes-dados',
+  path: '/fontes-dados',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
-  id: '/admin/financeiro',
-  path: '/admin/financeiro',
-  getParentRoute: () => rootRouteImport,
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminBugsRoute = AdminBugsRouteImport.update({
-  id: '/admin/bugs',
-  path: '/admin/bugs',
-  getParentRoute: () => rootRouteImport,
+  id: '/bugs',
+  path: '/bugs',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
   id: '/accept-invite/$token',
@@ -145,6 +151,7 @@ const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -220,6 +228,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/alertas'
     | '/clientes'
     | '/configuracoes'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
@@ -307,13 +318,6 @@ export interface RootRouteChildren {
   RegrasDiagnosticoRoute: typeof RegrasDiagnosticoRoute
   SignupRoute: typeof SignupRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
-  AdminBugsRoute: typeof AdminBugsRoute
-  AdminFinanceiroRoute: typeof AdminFinanceiroRoute
-  AdminFontesDadosRoute: typeof AdminFontesDadosRoute
-  AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
-  AdminPlanosRoute: typeof AdminPlanosRoute
-  AdminUsuariosRoute: typeof AdminUsuariosRoute
-  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -409,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -418,52 +429,52 @@ declare module '@tanstack/react-router' {
     }
     '/admin/': {
       id: '/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/usuarios': {
       id: '/admin/usuarios'
-      path: '/admin/usuarios'
+      path: '/usuarios'
       fullPath: '/admin/usuarios'
       preLoaderRoute: typeof AdminUsuariosRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/planos': {
       id: '/admin/planos'
-      path: '/admin/planos'
+      path: '/planos'
       fullPath: '/admin/planos'
       preLoaderRoute: typeof AdminPlanosRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/organizacoes': {
       id: '/admin/organizacoes'
-      path: '/admin/organizacoes'
+      path: '/organizacoes'
       fullPath: '/admin/organizacoes'
       preLoaderRoute: typeof AdminOrganizacoesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/fontes-dados': {
       id: '/admin/fontes-dados'
-      path: '/admin/fontes-dados'
+      path: '/fontes-dados'
       fullPath: '/admin/fontes-dados'
       preLoaderRoute: typeof AdminFontesDadosRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/financeiro': {
       id: '/admin/financeiro'
-      path: '/admin/financeiro'
+      path: '/financeiro'
       fullPath: '/admin/financeiro'
       preLoaderRoute: typeof AdminFinanceiroRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/bugs': {
       id: '/admin/bugs'
-      path: '/admin/bugs'
+      path: '/bugs'
       fullPath: '/admin/bugs'
       preLoaderRoute: typeof AdminBugsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/accept-invite/$token': {
       id: '/accept-invite/$token'
@@ -475,8 +486,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminBugsRoute: typeof AdminBugsRoute
+  AdminFinanceiroRoute: typeof AdminFinanceiroRoute
+  AdminFontesDadosRoute: typeof AdminFontesDadosRoute
+  AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
+  AdminPlanosRoute: typeof AdminPlanosRoute
+  AdminUsuariosRoute: typeof AdminUsuariosRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminBugsRoute: AdminBugsRoute,
+  AdminFinanceiroRoute: AdminFinanceiroRoute,
+  AdminFontesDadosRoute: AdminFontesDadosRoute,
+  AdminOrganizacoesRoute: AdminOrganizacoesRoute,
+  AdminPlanosRoute: AdminPlanosRoute,
+  AdminUsuariosRoute: AdminUsuariosRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
@@ -491,14 +525,16 @@ const rootRouteChildren: RootRouteChildren = {
   RegrasDiagnosticoRoute: RegrasDiagnosticoRoute,
   SignupRoute: SignupRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
-  AdminBugsRoute: AdminBugsRoute,
-  AdminFinanceiroRoute: AdminFinanceiroRoute,
-  AdminFontesDadosRoute: AdminFontesDadosRoute,
-  AdminOrganizacoesRoute: AdminOrganizacoesRoute,
-  AdminPlanosRoute: AdminPlanosRoute,
-  AdminUsuariosRoute: AdminUsuariosRoute,
-  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
