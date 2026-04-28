@@ -300,7 +300,7 @@ function CodeSearchPanel({
   }
 
   return (
-    <div className="absolute top-4 right-16 z-[1000] w-80 rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
+    <div className="absolute top-20 right-20 z-[1000] w-80 rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider">Buscar por código</span>
         <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">Fechar</button>
@@ -405,7 +405,7 @@ function CoordsPanel({
   }
 
   return (
-    <div className="absolute top-4 right-16 z-[1000] w-80 rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
+    <div className="absolute top-20 right-20 z-[1000] w-80 rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider">Buscar por coordenadas</span>
         <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">Fechar</button>
