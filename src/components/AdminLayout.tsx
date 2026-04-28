@@ -9,6 +9,7 @@ import {
   Tag,
   DollarSign,
   Bug,
+  Database,
   ArrowLeft,
   Loader2,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const items: ReadonlyArray<{ to: string; icon: typeof LayoutDashboard; label: st
   { to: "/admin/organizacoes", icon: Building2, label: "Organizações" },
   { to: "/admin/usuarios", icon: Users, label: "Usuários" },
   { to: "/admin/planos", icon: Tag, label: "Planos" },
+  { to: "/admin/fontes-dados", icon: Database, label: "Fontes de Dados" },
   { to: "/admin/financeiro", icon: DollarSign, label: "Financeiro" },
   { to: "/admin/bugs", icon: Bug, label: "Bugs / Suporte" },
 ];

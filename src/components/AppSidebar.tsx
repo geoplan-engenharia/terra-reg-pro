@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Map, Eye, FileCheck2, Users, Bell, Leaf, UserCog, History, Database, Sliders, Settings, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Map, Eye, FileCheck2, Users, Bell, Leaf, UserCog, History, Sliders, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -11,7 +11,6 @@ const items = [
   { to: "/clientes", icon: Users, label: "Clientes" },
   { to: "/alertas", icon: Bell, label: "Alertas" },
   { to: "/historico", icon: History, label: "Histórico" },
-  { to: "/fontes-dados", icon: Database, label: "Fontes de Dados" },
   { to: "/regras-diagnostico", icon: Sliders, label: "Regras de Diagnóstico" },
   { to: "/configuracoes", icon: Settings, label: "Configurações" },
 ] as const;
