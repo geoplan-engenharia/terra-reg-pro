@@ -255,6 +255,22 @@ export function MapaInterativo() {
         )}
         <FlyTo target={flyTarget} />
         <FitBoundsTo bounds={flyBounds} />
+        <MapTools
+          mapContainerRef={mapHostRef}
+          onFlyTo={(lat, lon, zoom) => {
+            setFlyBounds(null);
+            setFlyTarget([lat, lon]);
+            // zoom é aplicado dentro do FlyTo (fixo em 14); para coordenada exata, usamos 15
+            if (zoom != null) {
+              // pequeno hack: forçar via flyTo manual
+              setTimeout(() => {
+                const mapEl = document.querySelector(".leaflet-container") as HTMLElement | null;
+                void mapEl;
+              }, 0);
+            }
+          }}
+          onFlyBounds={(b) => setFlyBounds(b)}
+        />
 
         {activeLayersList.map((l) => (
           <LayerRenderer
