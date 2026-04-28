@@ -151,7 +151,7 @@ export function PlaceSearch({
       type: item.type,
     };
     onSelect(place);
-    setQuery(item.display_name.split(",").slice(0, 2).join(","));
+    setQuery(formatPlaceLabel(item));
     setOpen(false);
   };
 
