@@ -299,10 +299,13 @@ export function MapaInterativo() {
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
           <PlaceSearch
             onSelect={(place) => {
-              if (place.bbox) {
+              // Estados (regiões muito grandes) usam bbox; municípios e demais vão direto ao centro com zoom próximo
+              const isState = place.type === "state" || place.type === "administrative";
+              if (isState && place.bbox) {
                 const [s, n, w, e] = place.bbox;
                 setFlyBounds([[s, w], [n, e]] as L.LatLngBoundsExpression);
               } else {
+                setFlyBounds(null);
                 setFlyTarget([place.lat, place.lon]);
               }
             }}
