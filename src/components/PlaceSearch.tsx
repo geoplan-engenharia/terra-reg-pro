@@ -16,8 +16,42 @@ type NominatimItem = {
   lon: string;
   boundingbox?: [string, string, string, string];
   type?: string;
+  class?: string;
   place_id: number;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    state_code?: string;
+    "ISO3166-2-lvl4"?: string;
+    country?: string;
+  };
 };
+
+const UF_MAP: Record<string, string> = {
+  Acre: "AC", Alagoas: "AL", Amapá: "AP", Amazonas: "AM", Bahia: "BA", Ceará: "CE",
+  "Distrito Federal": "DF", "Espírito Santo": "ES", Goiás: "GO", Maranhão: "MA",
+  "Mato Grosso": "MT", "Mato Grosso do Sul": "MS", "Minas Gerais": "MG", Pará: "PA",
+  Paraíba: "PB", Paraná: "PR", Pernambuco: "PE", Piauí: "PI", "Rio de Janeiro": "RJ",
+  "Rio Grande do Norte": "RN", "Rio Grande do Sul": "RS", Rondônia: "RO", Roraima: "RR",
+  "Santa Catarina": "SC", "São Paulo": "SP", Sergipe: "SE", Tocantins: "TO",
+};
+
+function formatPlaceLabel(item: NominatimItem): string {
+  const a = item.address ?? {};
+  const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county;
+  const stateName = a.state;
+  const iso = a["ISO3166-2-lvl4"];
+  const uf = (iso?.split("-")[1]) ?? (stateName ? UF_MAP[stateName] : undefined);
+  // Estado puro (sem cidade)
+  if (!city && stateName) return uf ? `${stateName} (${uf})` : stateName;
+  if (city && uf) return `${city}, ${uf}`;
+  if (city && stateName) return `${city}, ${stateName}`;
+  return city ?? stateName ?? item.display_name.split(",")[0];
+}
 
 export function PlaceSearch({
   onSelect,
