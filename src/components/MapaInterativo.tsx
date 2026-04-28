@@ -1,32 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap, GeoJSON } from "react-leaflet";
 import L from "leaflet";
 import { useProperties } from "@/lib/queries";
 import type { RuralProperty } from "@/lib/types";
 import { ImovelPanel } from "./ImovelPanel";
 import { PropertyForm } from "./PropertyForm";
+import { LayerFeaturePanel } from "./LayerFeaturePanel";
 import { useAuth } from "@/lib/auth";
 import { Layers, ChevronRight, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
+import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
-
-interface Camada {
-  id: string;
-  nome: string;
-  cor: string;
-  ativo: boolean;
-  source_key: string;
-}
-
-const camadasIniciais: Camada[] = [
-  { id: "car", nome: "Imóveis CAR/SICAR", cor: "#5fbb6f", ativo: true, source_key: "car" },
-  { id: "sigef", nome: "Parcelas SIGEF/INCRA", cor: "#3b9bff", ativo: false, source_key: "sigef" },
-  { id: "desmatamento", nome: "Alertas de desmatamento", cor: "#e85d4a", ativo: false, source_key: "prodes" },
-  { id: "embargos", nome: "Áreas embargadas IBAMA", cor: "#f4a02b", ativo: false, source_key: "ibama" },
-  { id: "mapbiomas", nome: "Cobertura MapBiomas", cor: "#a78bfa", ativo: false, source_key: "mapbiomas" },
-];
 
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
@@ -42,16 +28,53 @@ function colorForProperty(p: RuralProperty): string {
   return "#5fbb6f";
 }
 
+function LayerRenderer({
+  layer,
+  onFeatureClick,
+}: {
+  layer: DataLayer;
+  onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
+}) {
+  const { data: features = [] } = useLayerFeatures(layer.id);
+  if (features.length === 0) return null;
+  const fc: GeoJSON.FeatureCollection = {
+    type: "FeatureCollection",
+    features: features.map((f) => ({
+      type: "Feature",
+      geometry: f.geometry_geojson,
+      properties: { ...f.properties_json, _id: f.id },
+    })),
+  };
+  return (
+    <GeoJSON
+      key={layer.id + ":" + features.length}
+      data={fc}
+      style={{ color: layer.color, weight: 1.5, fillColor: layer.color, fillOpacity: 0.25 }}
+      onEachFeature={(feat, lyr) => {
+        lyr.on({
+          click: () => {
+            const id = (feat.properties as { _id?: string })?._id;
+            const target = features.find((x) => x.id === id);
+            if (target) onFeatureClick(target, layer);
+          },
+        });
+      }}
+    />
+  );
+}
+
 export function MapaInterativo() {
   const { canEditProperties } = useAuth();
   const guardTrial = useGuardTrial();
   const { data: properties = [], isLoading } = useProperties();
+  const { data: dataLayers = [] } = useDataLayers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [camadas, setCamadas] = useState<Camada[]>(camadasIniciais);
+  const [activeLayerIds, setActiveLayerIds] = useState<Record<string, boolean>>({});
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
   const [busca, setBusca] = useState("");
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer } | null>(null);
 
   const selected = useMemo(() => properties.find((p) => p.id === selectedId) ?? null, [properties, selectedId]);
 
@@ -72,8 +95,13 @@ export function MapaInterativo() {
     );
   }, [busca, georef]);
 
-  const toggleCamada = (id: string) =>
-    setCamadas((c) => c.map((x) => (x.id === id ? { ...x, ativo: !x.ativo } : x)));
+  const visibleLayers = useMemo(
+    () => dataLayers.filter((l) => l.visible_to_users && l.status === "ativa"),
+    [dataLayers]
+  );
+
+  const toggleLayer = (id: string) =>
+    setActiveLayerIds((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
     <div className="relative h-full w-full">
@@ -89,6 +117,20 @@ export function MapaInterativo() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FlyTo target={flyTarget} />
+
+        {visibleLayers
+          .filter((l) => activeLayerIds[l.id])
+          .map((l) => (
+            <LayerRenderer
+              key={l.id}
+              layer={l}
+              onFeatureClick={(feature, layer) => {
+                setSelectedFeature({ feature, layer });
+                setSelectedId(null);
+              }}
+            />
+          ))}
+
         {filtrados.map((p) => {
           const color = colorForProperty(p);
           const isActive = p.id === selectedId;
@@ -104,7 +146,7 @@ export function MapaInterativo() {
                 fillColor: color,
                 fillOpacity: isActive ? 0.85 : 0.55,
               }}
-              eventHandlers={{ click: () => setSelectedId(p.id) }}
+              eventHandlers={{ click: () => { setSelectedId(p.id); setSelectedFeature(null); } }}
             >
               <Tooltip direction="top" offset={[0, -8]}>
                 <strong>{p.name}</strong>
@@ -144,25 +186,28 @@ export function MapaInterativo() {
             <Layers className="h-4 w-4 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider">Camadas geoespaciais</span>
           </div>
-          <div className="p-2 space-y-1">
-            {camadas.map((c) => (
+          <div className="p-2 space-y-1 max-h-64 overflow-auto">
+            {visibleLayers.length === 0 && (
+              <p className="text-[11px] text-muted-foreground px-2 py-1.5">
+                Nenhuma camada disponível. O Super Admin pode sincronizá-las em Fontes de Dados.
+              </p>
+            )}
+            {visibleLayers.map((c) => (
               <label
                 key={c.id}
                 className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent/10 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  checked={c.ativo}
-                  onChange={() => toggleCamada(c.id)}
+                  checked={!!activeLayerIds[c.id]}
+                  onChange={() => toggleLayer(c.id)}
                   className="h-3.5 w-3.5 accent-primary"
                 />
-                <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: c.cor }} />
-                <span className="text-xs flex-1 leading-tight">{c.nome}</span>
+                <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: c.color }} />
+                <span className="text-xs flex-1 leading-tight">{c.name}</span>
+                <span className="text-[10px] text-muted-foreground">{c.features_count ?? 0}</span>
               </label>
             ))}
-            <p className="text-[10px] text-muted-foreground px-2 pt-1">
-              Integração com fontes oficiais será habilitada em breve.
-            </p>
           </div>
         </div>
 
@@ -194,6 +239,7 @@ export function MapaInterativo() {
                     key={p.id}
                     onClick={() => {
                       setSelectedId(p.id);
+                      setSelectedFeature(null);
                       setFlyTarget([Number(p.centroid_lat), Number(p.centroid_lng)]);
                     }}
                     className={cn(
@@ -218,11 +264,23 @@ export function MapaInterativo() {
         </div>
       </div>
 
-      {selectedId && (
+      {selectedId && !selectedFeature && (
         <ImovelPanel
           propertyId={selectedId}
           onClose={() => setSelectedId(null)}
           onEdit={() => { if (selected) { setEditTarget(selected); setFormMode("edit"); } }}
+        />
+      )}
+
+      {selectedFeature && (
+        <LayerFeaturePanel
+          feature={selectedFeature.feature}
+          layer={selectedFeature.layer}
+          onClose={() => setSelectedFeature(null)}
+          onImported={(id) => {
+            setSelectedId(id);
+            setSelectedFeature(null);
+          }}
         />
       )}
 

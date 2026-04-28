@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import type { RuralProperty, Diagnostic, Confiabilidade } from "@/lib/types";
 import { useProperty, usePropertyDiagnostics, useToggleMonitor, usePropertyGeometry, useReprocessDiagnostics, usePropertyEnvironmentalAnalyses } from "@/lib/queries";
-import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown, RefreshCw, Leaf } from "lucide-react";
+import { X, MapPin, Ruler, FileText, AlertTriangle, ShieldCheck, Hash, Activity, Eye, Loader2, Pencil, FileJson, FileDown, RefreshCw, Leaf, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
 import { EnvironmentalAnalysisModal } from "./EnvironmentalAnalysisModal";
+import { useSearchDocumental, type DocumentalSearchResult } from "@/lib/layer-queries";
 
 const confiabilidadeMap: Record<Confiabilidade, { label: string; classes: string; dot: string }> = {
   alta: { label: "Alta", classes: "bg-success/15 text-success border-success/30", dot: "bg-success" },
@@ -62,6 +63,9 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
   const reprocess = useReprocessDiagnostics();
   const [reportOpen, setReportOpen] = useState(false);
   const [envOpen, setEnvOpen] = useState(false);
+  const [docQuery, setDocQuery] = useState("");
+  const [docResults, setDocResults] = useState<DocumentalSearchResult[] | null>(null);
+  const docSearch = useSearchDocumental();
   const latestEnv = envHistory[0] ?? null;
 
   const sortedDiag = useMemo(() => {
@@ -275,6 +279,54 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
               )}
             </div>
           )}
+        </Section>
+
+        <Section title="Consulta documental" icon={Search}>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                value={docQuery}
+                onChange={(e) => setDocQuery(e.target.value)}
+                placeholder="CPF/CNPJ ou nº matrícula"
+                className="h-9 flex-1 rounded-md border border-input bg-input/40 px-3 text-xs"
+              />
+              <button
+                onClick={async () => {
+                  if (docQuery.trim().length < 3) { toast.error("Informe ao menos 3 caracteres"); return; }
+                  try {
+                    const r = await docSearch.mutateAsync({ identifier: docQuery.trim() });
+                    setDocResults(r);
+                  } catch (e) { toast.error((e as Error).message); }
+                }}
+                disabled={docSearch.isPending}
+                className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {docSearch.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                Buscar
+              </button>
+            </div>
+            {docResults && (
+              <div className="space-y-1.5">
+                {docResults.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">Nenhuma fonte documental cadastrada.</p>
+                )}
+                {docResults.map((r, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "rounded-md border px-2.5 py-2 text-[11px]",
+                      r.found
+                        ? severidadeMap[r.severidade]
+                        : "border-border bg-background/30 text-muted-foreground"
+                    )}
+                  >
+                    <div className="font-semibold">{r.title}</div>
+                    <div className="opacity-90 mt-0.5">{r.description}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </Section>
 
         {(imovel.notes || imovel.last_consultation_at) && (
