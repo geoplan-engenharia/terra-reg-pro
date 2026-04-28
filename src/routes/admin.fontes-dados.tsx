@@ -285,13 +285,33 @@ function DataSourcesPage() {
                     </a>
                   )}
 
-                  <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
-                    <button
-                      onClick={() => handleSync(s)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" /> Sincronização simulada
-                    </button>
+                  <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
+                    {s.source_kind === "documental" ? (
+                      <button
+                        onClick={() => handleSync(s)}
+                        className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 text-xs hover:bg-accent/10"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> Consulta documental simulada
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleSyncAsLayer(s)}
+                          disabled={syncLayer.isPending}
+                          className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/30 h-8 text-xs hover:bg-primary/20 disabled:opacity-60"
+                        >
+                          {syncLayer.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layers className="h-3.5 w-3.5" />}
+                          Sincronizar como camada
+                        </button>
+                        <button
+                          onClick={() => handleSync(s)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border h-8 px-2.5 text-xs hover:bg-accent/10"
+                          title="Consulta pontual simulada"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => openEdit(s)}
                       className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent/10"
