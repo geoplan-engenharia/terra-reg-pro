@@ -63,6 +63,9 @@ export function ImovelPanel({ propertyId, onClose, onEdit }: { propertyId: strin
   const reprocess = useReprocessDiagnostics();
   const [reportOpen, setReportOpen] = useState(false);
   const [envOpen, setEnvOpen] = useState(false);
+  const [docQuery, setDocQuery] = useState("");
+  const [docResults, setDocResults] = useState<DocumentalSearchResult[] | null>(null);
+  const docSearch = useSearchDocumental();
   const latestEnv = envHistory[0] ?? null;
 
   const sortedDiag = useMemo(() => {
