@@ -53,7 +53,7 @@ const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: str
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
   useEffect(() => {
-    if (target) map.flyTo(target, 11, { duration: 1.2 });
+    if (target) map.flyTo(target, 13, { duration: 1.2 });
   }, [target, map]);
   return null;
 }
@@ -61,7 +61,7 @@ function FlyTo({ target }: { target: [number, number] | null }) {
 function FitBoundsTo({ bounds }: { bounds: L.LatLngBoundsExpression | null }) {
   const map = useMap();
   useEffect(() => {
-    if (bounds) map.flyToBounds(bounds, { padding: [60, 60], duration: 1.0, maxZoom: 13 });
+    if (bounds) map.flyToBounds(bounds, { padding: [40, 40], duration: 1.0, maxZoom: 13 });
   }, [bounds, map]);
   return null;
 }
@@ -299,10 +299,13 @@ export function MapaInterativo() {
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
           <PlaceSearch
             onSelect={(place) => {
-              if (place.bbox) {
+              // Estados (regiões muito grandes) usam bbox; municípios e demais vão direto ao centro com zoom próximo
+              const isState = place.type === "state" || place.type === "administrative";
+              if (isState && place.bbox) {
                 const [s, n, w, e] = place.bbox;
                 setFlyBounds([[s, w], [n, e]] as L.LatLngBoundsExpression);
               } else {
+                setFlyBounds(null);
                 setFlyTarget([place.lat, place.lon]);
               }
             }}
