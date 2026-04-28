@@ -49,17 +49,32 @@ export function PlaceSearch({
         const url = new URL("https://nominatim.openstreetmap.org/search");
         url.searchParams.set("q", q);
         url.searchParams.set("format", "json");
-        url.searchParams.set("addressdetails", "0");
-        url.searchParams.set("limit", "8");
+        url.searchParams.set("addressdetails", "1");
+        url.searchParams.set("limit", "15");
         url.searchParams.set("countrycodes", "br");
         url.searchParams.set("accept-language", "pt-BR");
+        // Restringe a municípios e estados
+        url.searchParams.set("featuretype", "settlement");
         const res = await fetch(url.toString(), {
           signal: ctrl.signal,
           headers: { Accept: "application/json" },
         });
         if (!res.ok) throw new Error("search failed");
-        const data = (await res.json()) as NominatimItem[];
-        setResults(data);
+        const data = (await res.json()) as (NominatimItem & {
+          class?: string;
+          type?: string;
+          address?: { city?: string; town?: string; village?: string; municipality?: string; state?: string; country?: string };
+        })[];
+        // Filtra apenas municípios (city/town/village/municipality) e estados
+        const filtered = data.filter((d) => {
+          const t = d.type ?? "";
+          const c = d.class ?? "";
+          return (
+            c === "boundary" ||
+            ["city", "town", "village", "municipality", "administrative", "state"].includes(t)
+          );
+        }).slice(0, 8);
+        setResults(filtered);
         setOpen(true);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -108,7 +123,7 @@ export function PlaceSearch({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Buscar cidade, estado, endereço..."
+          placeholder="Buscar município ou estado..."
           className="h-9 w-full rounded-md border border-input bg-input/40 pl-9 pr-9 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {loading ? (
