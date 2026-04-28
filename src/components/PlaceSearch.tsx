@@ -16,8 +16,42 @@ type NominatimItem = {
   lon: string;
   boundingbox?: [string, string, string, string];
   type?: string;
+  class?: string;
   place_id: number;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    state_code?: string;
+    "ISO3166-2-lvl4"?: string;
+    country?: string;
+  };
 };
+
+const UF_MAP: Record<string, string> = {
+  Acre: "AC", Alagoas: "AL", Amapá: "AP", Amazonas: "AM", Bahia: "BA", Ceará: "CE",
+  "Distrito Federal": "DF", "Espírito Santo": "ES", Goiás: "GO", Maranhão: "MA",
+  "Mato Grosso": "MT", "Mato Grosso do Sul": "MS", "Minas Gerais": "MG", Pará: "PA",
+  Paraíba: "PB", Paraná: "PR", Pernambuco: "PE", Piauí: "PI", "Rio de Janeiro": "RJ",
+  "Rio Grande do Norte": "RN", "Rio Grande do Sul": "RS", Rondônia: "RO", Roraima: "RR",
+  "Santa Catarina": "SC", "São Paulo": "SP", Sergipe: "SE", Tocantins: "TO",
+};
+
+function formatPlaceLabel(item: NominatimItem): string {
+  const a = item.address ?? {};
+  const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county;
+  const stateName = a.state;
+  const iso = a["ISO3166-2-lvl4"];
+  const uf = (iso?.split("-")[1]) ?? (stateName ? UF_MAP[stateName] : undefined);
+  // Estado puro (sem cidade)
+  if (!city && stateName) return uf ? `${stateName} (${uf})` : stateName;
+  if (city && uf) return `${city}, ${uf}`;
+  if (city && stateName) return `${city}, ${stateName}`;
+  return city ?? stateName ?? item.display_name.split(",")[0];
+}
 
 export function PlaceSearch({
   onSelect,
@@ -60,12 +94,8 @@ export function PlaceSearch({
           headers: { Accept: "application/json" },
         });
         if (!res.ok) throw new Error("search failed");
-        const data = (await res.json()) as (NominatimItem & {
-          class?: string;
-          type?: string;
-          address?: { city?: string; town?: string; village?: string; municipality?: string; state?: string; country?: string };
-        })[];
-        // Filtra apenas municípios (city/town/village/municipality) e estados
+        const data = (await res.json()) as NominatimItem[];
+        // Filtra apenas municípios e estados
         const filtered = data.filter((d) => {
           const t = d.type ?? "";
           const c = d.class ?? "";
@@ -73,8 +103,18 @@ export function PlaceSearch({
             c === "boundary" ||
             ["city", "town", "village", "municipality", "administrative", "state"].includes(t)
           );
-        }).slice(0, 8);
-        setResults(filtered);
+        });
+        // Deduplica por label "Cidade, UF"
+        const seen = new Set<string>();
+        const unique: NominatimItem[] = [];
+        for (const item of filtered) {
+          const label = formatPlaceLabel(item).toLowerCase();
+          if (seen.has(label)) continue;
+          seen.add(label);
+          unique.push(item);
+          if (unique.length >= 8) break;
+        }
+        setResults(unique);
         setOpen(true);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -111,7 +151,7 @@ export function PlaceSearch({
       type: item.type,
     };
     onSelect(place);
-    setQuery(item.display_name.split(",").slice(0, 2).join(","));
+    setQuery(formatPlaceLabel(item));
     setOpen(false);
   };
 
@@ -145,10 +185,10 @@ export function PlaceSearch({
               key={r.place_id}
               type="button"
               onClick={() => handleSelect(r)}
-              className="w-full text-left px-3 py-2 text-xs hover:bg-accent/10 border-b border-border last:border-b-0 flex items-start gap-2"
+              className="w-full text-left px-3 py-2 text-xs hover:bg-accent/10 border-b border-border last:border-b-0 flex items-center gap-2"
             >
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-              <span className="line-clamp-2">{r.display_name}</span>
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{formatPlaceLabel(r)}</span>
             </button>
           ))}
         </div>
