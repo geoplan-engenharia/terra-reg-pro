@@ -51,11 +51,11 @@ const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: str
   },
 };
 
-function FlyTo({ target }: { target: [number, number] | null }) {
+function FlyTo({ target, zoom }: { target: [number, number] | null; zoom?: number }) {
   const map = useMap();
   useEffect(() => {
-    if (target) map.flyTo(target, 14, { duration: 1.2 });
-  }, [target, map]);
+    if (target) map.flyTo(target, zoom ?? 14, { duration: 1.2 });
+  }, [target, map, zoom]);
   return null;
 }
 
