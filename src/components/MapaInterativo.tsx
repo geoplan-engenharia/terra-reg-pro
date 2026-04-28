@@ -9,7 +9,7 @@ import { LayerFeaturePanel } from "./LayerFeaturePanel";
 import { LayerControl } from "./LayerControl";
 import { MapLegend } from "./MapLegend";
 import { useAuth } from "@/lib/auth";
-import { ChevronRight, Search, Loader2, Plus } from "lucide-react";
+import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
 import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
