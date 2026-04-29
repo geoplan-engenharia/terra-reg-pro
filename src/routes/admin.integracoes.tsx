@@ -247,6 +247,46 @@ function IntegracoesPage() {
         />
       )}
 
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-card border border-border rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border">
+              <div className="text-sm font-semibold text-destructive flex items-center gap-2">
+                <Trash2 className="h-4 w-4" /> Excluir execução?
+              </div>
+            </div>
+            <div className="p-4 space-y-2 text-xs">
+              <p>Esta ação irá remover permanentemente:</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
+                <li>O arquivo do storage ({confirmDelete.storage_path?.split("/").pop()})</li>
+                <li>A camada e todas as feições importadas (se houver)</li>
+                <li>O registro desta execução</li>
+              </ul>
+              <p className="pt-2 text-warning">Imóveis cadastrados vinculados não são afetados — apenas a camada visual no mapa.</p>
+            </div>
+            <div className="p-4 border-t border-border flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="h-9 px-3 rounded-md border border-border text-xs hover:bg-accent/10">Cancelar</button>
+              <button
+                disabled={deleteJob.isPending}
+                onClick={async () => {
+                  try {
+                    await deleteJob.mutateAsync({ job: confirmDelete });
+                    toast.success("Execução excluída");
+                    setConfirmDelete(null);
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
+                className="h-9 px-4 rounded-md bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {deleteJob.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {newOpen && (
         <NewProviderModal
           onClose={() => setNewOpen(false)}
