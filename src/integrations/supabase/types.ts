@@ -453,6 +453,119 @@ export type Database = {
           },
         ]
       }
+      integration_jobs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          features_imported: number
+          finished_at: string | null
+          id: string
+          layer_id: string | null
+          log: string | null
+          organization_id: string | null
+          properties_linked: number
+          provider_id: string
+          source_label: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["integration_job_status"]
+          storage_path: string | null
+          triggered_by: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          features_imported?: number
+          finished_at?: string | null
+          id?: string
+          layer_id?: string | null
+          log?: string | null
+          organization_id?: string | null
+          properties_linked?: number
+          provider_id: string
+          source_label?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["integration_job_status"]
+          storage_path?: string | null
+          triggered_by?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          features_imported?: number
+          finished_at?: string | null
+          id?: string
+          layer_id?: string | null
+          log?: string | null
+          organization_id?: string | null
+          properties_linked?: number
+          provider_id?: string
+          source_label?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["integration_job_status"]
+          storage_path?: string | null
+          triggered_by?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_jobs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "integration_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_providers: {
+        Row: {
+          config: Json
+          created_at: string
+          data_source_key: string | null
+          default_color: string
+          description: string | null
+          id: string
+          key: string
+          kind: Database["public"]["Enums"]["integration_provider_kind"]
+          layer_type: Database["public"]["Enums"]["layer_type"]
+          name: string
+          status: Database["public"]["Enums"]["integration_provider_status"]
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          data_source_key?: string | null
+          default_color?: string
+          description?: string | null
+          id?: string
+          key: string
+          kind?: Database["public"]["Enums"]["integration_provider_kind"]
+          layer_type?: Database["public"]["Enums"]["layer_type"]
+          name: string
+          status?: Database["public"]["Enums"]["integration_provider_status"]
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          data_source_key?: string | null
+          default_color?: string
+          description?: string | null
+          id?: string
+          key?: string
+          kind?: Database["public"]["Enums"]["integration_provider_kind"]
+          layer_type?: Database["public"]["Enums"]["layer_type"]
+          name?: string
+          status?: Database["public"]["Enums"]["integration_provider_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       license_alerts: {
         Row: {
           id: string
@@ -1273,6 +1386,10 @@ export type Database = {
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
+      link_car_features_to_properties: {
+        Args: { _layer_id: string }
+        Returns: number
+      }
       refresh_license_alerts: {
         Args: { _license_id: string }
         Returns: undefined
@@ -1326,6 +1443,19 @@ export type Database = {
         | "sobreposicao"
         | "documental"
         | "outro"
+      integration_job_status:
+        | "pendente"
+        | "processando"
+        | "sucesso"
+        | "erro"
+        | "cancelado"
+      integration_provider_kind:
+        | "shapefile_upload"
+        | "rest_api"
+        | "wms_wfs"
+        | "scraping"
+        | "manual"
+      integration_provider_status: "ativo" | "planejado" | "desativado"
       invite_status: "pendente" | "aceito" | "expirado" | "revogado"
       layer_geometry_type: "polygon" | "multipolygon" | "point" | "line"
       layer_type:
@@ -1516,6 +1646,21 @@ export const Constants = {
         "documental",
         "outro",
       ],
+      integration_job_status: [
+        "pendente",
+        "processando",
+        "sucesso",
+        "erro",
+        "cancelado",
+      ],
+      integration_provider_kind: [
+        "shapefile_upload",
+        "rest_api",
+        "wms_wfs",
+        "scraping",
+        "manual",
+      ],
+      integration_provider_status: ["ativo", "planejado", "desativado"],
       invite_status: ["pendente", "aceito", "expirado", "revogado"],
       layer_geometry_type: ["polygon", "multipolygon", "point", "line"],
       layer_type: [

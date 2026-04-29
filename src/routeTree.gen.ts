@@ -28,6 +28,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminOrganizacoesRouteImport } from './routes/admin.organizacoes'
+import { Route as AdminIntegracoesRouteImport } from './routes/admin.integracoes'
 import { Route as AdminFontesDadosRouteImport } from './routes/admin.fontes-dados'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminBugsRouteImport } from './routes/admin.bugs'
@@ -128,6 +129,11 @@ const AdminOrganizacoesRoute = AdminOrganizacoesRouteImport.update({
   path: '/organizacoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIntegracoesRoute = AdminIntegracoesRouteImport.update({
+  id: '/integracoes',
+  path: '/integracoes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFontesDadosRoute = AdminFontesDadosRouteImport.update({
   id: '/fontes-dados',
   path: '/fontes-dados',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/admin/bugs': typeof AdminBugsRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/fontes-dados': typeof AdminFontesDadosRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/admin/bugs': typeof AdminBugsRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/fontes-dados': typeof AdminFontesDadosRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/admin/bugs': typeof AdminBugsRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/fontes-dados': typeof AdminFontesDadosRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/organizacoes': typeof AdminOrganizacoesRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/admin/bugs'
     | '/admin/financeiro'
     | '/admin/fontes-dados'
+    | '/admin/integracoes'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin/bugs'
     | '/admin/financeiro'
     | '/admin/fontes-dados'
+    | '/admin/integracoes'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/admin/bugs'
     | '/admin/financeiro'
     | '/admin/fontes-dados'
+    | '/admin/integracoes'
     | '/admin/organizacoes'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -455,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrganizacoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/integracoes': {
+      id: '/admin/integracoes'
+      path: '/integracoes'
+      fullPath: '/admin/integracoes'
+      preLoaderRoute: typeof AdminIntegracoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/fontes-dados': {
       id: '/admin/fontes-dados'
       path: '/fontes-dados'
@@ -490,6 +509,7 @@ interface AdminRouteChildren {
   AdminBugsRoute: typeof AdminBugsRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
   AdminFontesDadosRoute: typeof AdminFontesDadosRoute
+  AdminIntegracoesRoute: typeof AdminIntegracoesRoute
   AdminOrganizacoesRoute: typeof AdminOrganizacoesRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
@@ -500,6 +520,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBugsRoute: AdminBugsRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
   AdminFontesDadosRoute: AdminFontesDadosRoute,
+  AdminIntegracoesRoute: AdminIntegracoesRoute,
   AdminOrganizacoesRoute: AdminOrganizacoesRoute,
   AdminPlanosRoute: AdminPlanosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
