@@ -3,13 +3,14 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { useState, useRef, useMemo } from "react";
 import {
   Plug, Plus, Upload, Loader2, CheckCircle2, XCircle, Clock,
-  FileArchive, MapPin, Layers, AlertCircle, X
+  FileArchive, MapPin, Layers, AlertCircle, X, Trash2, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   useIntegrationProviders, useIntegrationJobs, useUpsertProvider,
-  useUploadAndIngestSicar, type IntegrationProvider, type IntegrationJobStatus,
+  useUploadAndIngestSicar, useDeleteIntegrationJob, useCleanupOrphanFiles,
+  type IntegrationProvider, type IntegrationJobStatus, type IntegrationJob,
 } from "@/lib/integration-queries";
 
 export const Route = createFileRoute("/admin/integracoes")({
