@@ -341,10 +341,11 @@ export function MapaInterativo() {
         />
 
         {activeLayersList.map((l) => (
-          <LayerRenderer
+          <ActiveLayer
             key={l.id}
             layer={l}
             selectedFeatureId={selectedFeature?.feature.id ?? null}
+            onLoaded={handleLayerLoaded}
             onFeatureClick={(feature, layer) => {
               setSelectedFeature({ feature, layer });
               setSelectedId(null);
