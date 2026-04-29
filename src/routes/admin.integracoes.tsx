@@ -209,6 +209,16 @@ function IntegracoesPage() {
                             <div className="text-info text-[10px] mt-0.5">{j.log}</div>
                           )}
                         </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            onClick={() => setConfirmDelete(j)}
+                            disabled={j.status === "processando"}
+                            title="Excluir execução, arquivo e camada associada"
+                            className="inline-flex items-center justify-center h-7 w-7 rounded border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
