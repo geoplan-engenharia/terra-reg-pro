@@ -1,16 +1,20 @@
-import { Layers, Eye, EyeOff } from "lucide-react";
+import { Layers, Eye, EyeOff, Crosshair } from "lucide-react";
 import type { DataLayer } from "@/lib/layer-queries";
 
 export function LayerControl({
   layers,
   activeIds,
+  loadedCounts,
   onToggle,
+  onZoom,
   onActivateAll,
   onClearAll,
 }: {
   layers: DataLayer[];
   activeIds: Record<string, boolean>;
+  loadedCounts?: Record<string, number>;
   onToggle: (id: string) => void;
+  onZoom: (layer: DataLayer) => void;
   onActivateAll: () => void;
   onClearAll: () => void;
 }) {
@@ -54,32 +58,46 @@ export function LayerControl({
         )}
         {layers.map((c) => {
           const active = !!activeIds[c.id];
+          const loaded = loadedCounts?.[c.id];
           return (
-            <button
+            <div
               key={c.id}
-              type="button"
-              onClick={() => onToggle(c.id)}
-              title={c.description ?? c.name}
-              className={`w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition ${
+              className={`flex items-center gap-1 rounded-md transition ${
                 active ? "bg-accent/15 ring-1 ring-primary/30" : "hover:bg-accent/10 opacity-70"
               }`}
             >
-              <span
-                className="h-3 w-3 rounded-sm shrink-0 border border-border/40"
-                style={{ background: c.color, opacity: active ? 1 : 0.4 }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium leading-tight truncate">{c.name}</div>
-                <div className="text-[10px] text-muted-foreground capitalize">
-                  {c.layer_type.replace("_", " ")} · {c.features_count ?? 0} feições
+              <button
+                type="button"
+                onClick={() => onToggle(c.id)}
+                title={c.description ?? c.name}
+                className="flex-1 flex items-center gap-2.5 px-2 py-1.5 text-left min-w-0"
+              >
+                <span
+                  className="h-3 w-3 rounded-sm shrink-0 border border-border/40"
+                  style={{ background: c.color, opacity: active ? 1 : 0.4 }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium leading-tight truncate">{c.name}</div>
+                  <div className="text-[10px] text-muted-foreground capitalize">
+                    {c.layer_type.replace("_", " ")} · {c.features_count ?? 0} feições
+                    {active && loaded != null ? ` · ${loaded} no mapa` : ""}
+                  </div>
                 </div>
-              </div>
-              {active ? (
-                <Eye className="h-3.5 w-3.5 text-primary" />
-              ) : (
-                <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
-              )}
-            </button>
+                {active ? (
+                  <Eye className="h-3.5 w-3.5 text-primary" />
+                ) : (
+                  <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => onZoom(c)}
+                title="Zoom na camada"
+                className="p-1.5 mr-1 rounded-md hover:bg-accent/30 text-muted-foreground hover:text-foreground transition"
+              >
+                <Crosshair className="h-3.5 w-3.5" />
+              </button>
+            </div>
           );
         })}
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap, GeoJSON } from "react-leaflet";
 import L from "leaflet";
 import { MapTools } from "./MapTools";
@@ -85,14 +85,15 @@ function geometryBounds(geom: GeoJSON.Geometry): L.LatLngBoundsExpression | null
 
 function LayerRenderer({
   layer,
+  features,
   selectedFeatureId,
   onFeatureClick,
 }: {
   layer: DataLayer;
+  features: DataLayerFeature[];
   selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
 }) {
-  const { data: features = [] } = useLayerFeatures(layer.id);
   if (features.length === 0) return null;
   const fc: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
@@ -142,6 +143,32 @@ function LayerRenderer({
     />
   );
 }
+
+function ActiveLayer({
+  layer,
+  selectedFeatureId,
+  onFeatureClick,
+  onLoaded,
+}: {
+  layer: DataLayer;
+  selectedFeatureId: string | null;
+  onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
+  onLoaded: (layerId: string, features: DataLayerFeature[]) => void;
+}) {
+  const { data: features = [] } = useLayerFeatures(layer.id);
+  useEffect(() => {
+    onLoaded(layer.id, features);
+  }, [layer.id, features, onLoaded]);
+  return (
+    <LayerRenderer
+      layer={layer}
+      features={features}
+      selectedFeatureId={selectedFeatureId}
+      onFeatureClick={onFeatureClick}
+    />
+  );
+}
+
 
 export function MapaInterativo() {
   const { canEditProperties } = useAuth();
@@ -229,7 +256,53 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
+  // Tracks loaded features per layer (for debug counts and "zoom to layer")
+  const [loadedFeatures, setLoadedFeatures] = useState<Record<string, DataLayerFeature[]>>({});
+  const handleLayerLoaded = useCallback((layerId: string, features: DataLayerFeature[]) => {
+    setLoadedFeatures((prev) => {
+      if (prev[layerId]?.length === features.length) return prev;
+      return { ...prev, [layerId]: features };
+    });
+  }, []);
+
+  const loadedCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    Object.entries(loadedFeatures).forEach(([k, v]) => { counts[k] = v.length; });
+    return counts;
+  }, [loadedFeatures]);
+
+  const zoomToLayer = useCallback(async (layer: DataLayer) => {
+    // Activate if not already active so its features start loading
+    if (!activeLayerIds[layer.id]) {
+      setActiveLayerIds((prev) => ({ ...prev, [layer.id]: true }));
+    }
+    // Try cached features first
+    let feats = loadedFeatures[layer.id];
+    // If not loaded yet, fetch a quick sample directly to compute bbox
+    if (!feats || feats.length === 0) {
+      const { data } = await (await import("@/integrations/supabase/client")).supabase
+        .from("data_layer_features")
+        .select("geometry_geojson")
+        .eq("layer_id", layer.id)
+        .limit(1000);
+      feats = ((data ?? []) as unknown as Array<{ geometry_geojson: GeoJSON.Geometry }>).map((d) => ({
+        geometry_geojson: d.geometry_geojson,
+      } as DataLayerFeature));
+    }
+    if (!feats || feats.length === 0) return;
+    try {
+      const fc: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: feats.map((f) => ({ type: "Feature", geometry: f.geometry_geojson, properties: {} })),
+      };
+      const lyr = L.geoJSON(fc as GeoJSON.GeoJsonObject);
+      const b = lyr.getBounds();
+      if (b.isValid()) setFlyBounds(b);
+    } catch { /* ignore */ }
+  }, [activeLayerIds, loadedFeatures]);
+
   const mapHostRef = useRef<HTMLDivElement | null>(null);
+
 
   return (
     <div ref={mapHostRef} className="geoterra-map-host relative h-full w-full">
@@ -268,10 +341,11 @@ export function MapaInterativo() {
         />
 
         {activeLayersList.map((l) => (
-          <LayerRenderer
+          <ActiveLayer
             key={l.id}
             layer={l}
             selectedFeatureId={selectedFeature?.feature.id ?? null}
+            onLoaded={handleLayerLoaded}
             onFeatureClick={(feature, layer) => {
               setSelectedFeature({ feature, layer });
               setSelectedId(null);
@@ -347,7 +421,9 @@ export function MapaInterativo() {
         <LayerControl
           layers={visibleLayers}
           activeIds={activeLayerIds}
+          loadedCounts={loadedCounts}
           onToggle={toggleLayer}
+          onZoom={zoomToLayer}
           onActivateAll={activateAll}
           onClearAll={clearAll}
         />
