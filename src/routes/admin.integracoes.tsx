@@ -38,8 +38,11 @@ function IntegracoesPage() {
   const { data: jobs = [] } = useIntegrationJobs();
   const upsert = useUpsertProvider();
   const ingest = useUploadAndIngestSicar();
+  const deleteJob = useDeleteIntegrationJob();
+  const cleanupOrphans = useCleanupOrphanFiles();
   const [newOpen, setNewOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<IntegrationProvider | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<IntegrationJob | null>(null);
 
   const sicarProviders = useMemo(
     () => providers.filter((p) => p.kind === "shapefile_upload"),
