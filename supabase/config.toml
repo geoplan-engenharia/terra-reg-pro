@@ -1,1 +1,4 @@
 project_id = "uldldcbmvvinmxybepmo"
+
+[functions.ingest-sicar]
+verify_jwt = true
