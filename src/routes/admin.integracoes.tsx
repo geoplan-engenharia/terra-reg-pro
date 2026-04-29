@@ -180,6 +180,7 @@ function IntegracoesPage() {
                     <th className="text-right px-3 py-2 font-medium">Feições</th>
                     <th className="text-right px-3 py-2 font-medium">Imóveis vinculados</th>
                     <th className="text-left px-3 py-2 font-medium">Quando</th>
+                    <th className="text-right px-3 py-2 font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
