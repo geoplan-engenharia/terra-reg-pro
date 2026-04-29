@@ -163,41 +163,52 @@ Deno.serve(async (req) => {
     }, { onConflict: "data_source_key" }).select().single();
     if (layerErr) throw new Error(`Erro ao criar camada: ${layerErr.message}`);
 
+    // Log explícito do total parseado para diagnóstico (descobrir se shpjs truncou)
+    console.log(`[ingest-sicar] parsed features=${features.length}`);
+    await admin.from("integration_jobs").update({
+      log: `Shapefile parseado: ${features.length} feições totais. Iniciando ingestão...`,
+    }).eq("id", job.id);
+
     // Limpa features antigas
     await admin.from("data_layer_features").delete().eq("layer_id", layer.id);
 
-    // Insere em lotes
-    const BATCH = 200;
+    // Pré-monta todas as linhas (rápido, em memória)
+    const allRows = features.map((f) => {
+      const props = f.properties ?? {};
+      const externalId = props.cod_imovel ?? props.COD_IMOVEL ?? props.car_code ?? props.CAR ?? null;
+      const muni = props.municipio ?? props.MUNICIPIO ?? props.NM_MUN ?? null;
+      const uf = props.uf ?? props.UF ?? props.SIGLA_UF ?? job.uf ?? null;
+      const area = areaHa(f.geometry);
+      return {
+        layer_id: layer.id,
+        data_source_key: layerKey,
+        external_id: externalId,
+        geometry_geojson: f.geometry,
+        properties_json: props,
+        municipality: muni,
+        uf,
+        area_ha: area,
+      };
+    }).filter((r) => r.geometry_geojson);
+
+    // Insere em lotes paralelos (concorrência limitada)
+    const BATCH = 500;
+    const CONCURRENCY = 4;
     let inserted = 0;
-    for (let i = 0; i < features.length; i += BATCH) {
-      const batch = features.slice(i, i + BATCH).map((f) => {
-        const props = f.properties ?? {};
-        const externalId = props.cod_imovel ?? props.COD_IMOVEL ?? props.car_code ?? props.CAR ?? null;
-        const muni = props.municipio ?? props.MUNICIPIO ?? props.NM_MUN ?? null;
-        const uf = props.uf ?? props.UF ?? props.SIGLA_UF ?? job.uf ?? null;
-        const area = areaHa(f.geometry);
-        return {
-          layer_id: layer.id,
-          data_source_key: layerKey,
-          external_id: externalId,
-          geometry_geojson: f.geometry,
-          properties_json: props,
-          municipality: muni,
-          uf,
-          area_ha: area,
-        };
-      }).filter((r) => r.geometry_geojson);
+    const chunks: typeof allRows[] = [];
+    for (let i = 0; i < allRows.length; i += BATCH) chunks.push(allRows.slice(i, i + BATCH));
 
-      const { error: insErr } = await admin.from("data_layer_features").insert(batch);
-      if (insErr) throw new Error(`Erro ao inserir lote: ${insErr.message}`);
-      inserted += batch.length;
-
-      if (i % (BATCH * 5) === 0) {
-        await admin.from("integration_jobs").update({
-          features_imported: inserted,
-          log: `Inseridas ${inserted}/${features.length} feições...`,
-        }).eq("id", job.id);
-      }
+    for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+      const slice = chunks.slice(i, i + CONCURRENCY);
+      await Promise.all(slice.map(async (batch) => {
+        const { error: insErr } = await admin.from("data_layer_features").insert(batch);
+        if (insErr) throw new Error(`Erro ao inserir lote: ${insErr.message}`);
+        inserted += batch.length;
+      }));
+      await admin.from("integration_jobs").update({
+        features_imported: inserted,
+        log: `Inseridas ${inserted}/${allRows.length} feições...`,
+      }).eq("id", job.id);
     }
 
     // Cruza com rural_properties via código CAR
