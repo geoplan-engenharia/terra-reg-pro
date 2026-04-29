@@ -256,7 +256,51 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
+  // Tracks loaded features per layer (for debug counts and "zoom to layer")
+  const [loadedFeatures, setLoadedFeatures] = useState<Record<string, DataLayerFeature[]>>({});
+  const handleLayerLoaded = useCallback((layerId: string, features: DataLayerFeature[]) => {
+    setLoadedFeatures((prev) => {
+      if (prev[layerId]?.length === features.length) return prev;
+      return { ...prev, [layerId]: features };
+    });
+  }, []);
+
+  const loadedCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    Object.entries(loadedFeatures).forEach(([k, v]) => { counts[k] = v.length; });
+    return counts;
+  }, [loadedFeatures]);
+
+  const zoomToLayer = useCallback(async (layer: DataLayer) => {
+    // Activate if not already active so its features start loading
+    if (!activeLayerIds[layer.id]) {
+      setActiveLayerIds((prev) => ({ ...prev, [layer.id]: true }));
+    }
+    // Try cached features first
+    let feats = loadedFeatures[layer.id];
+    // If not loaded yet, fetch a quick sample directly to compute bbox
+    if (!feats || feats.length === 0) {
+      const { data } = await (await import("@/integrations/supabase/client")).supabase
+        .from("data_layer_features")
+        .select("geometry_geojson")
+        .eq("layer_id", layer.id)
+        .limit(1000);
+      feats = (data ?? []) as DataLayerFeature[];
+    }
+    if (!feats || feats.length === 0) return;
+    try {
+      const fc: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: feats.map((f) => ({ type: "Feature", geometry: f.geometry_geojson, properties: {} })),
+      };
+      const lyr = L.geoJSON(fc as GeoJSON.GeoJsonObject);
+      const b = lyr.getBounds();
+      if (b.isValid()) setFlyBounds(b);
+    } catch { /* ignore */ }
+  }, [activeLayerIds, loadedFeatures]);
+
   const mapHostRef = useRef<HTMLDivElement | null>(null);
+
 
   return (
     <div ref={mapHostRef} className="geoterra-map-host relative h-full w-full">
