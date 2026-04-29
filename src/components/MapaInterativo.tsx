@@ -285,7 +285,9 @@ export function MapaInterativo() {
         .select("geometry_geojson")
         .eq("layer_id", layer.id)
         .limit(1000);
-      feats = (data ?? []) as DataLayerFeature[];
+      feats = ((data ?? []) as Array<{ geometry_geojson: GeoJSON.Geometry }>).map((d) => ({
+        geometry_geojson: d.geometry_geojson,
+      } as DataLayerFeature));
     }
     if (!feats || feats.length === 0) return;
     try {
