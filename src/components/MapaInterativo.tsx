@@ -85,14 +85,15 @@ function geometryBounds(geom: GeoJSON.Geometry): L.LatLngBoundsExpression | null
 
 function LayerRenderer({
   layer,
+  features,
   selectedFeatureId,
   onFeatureClick,
 }: {
   layer: DataLayer;
+  features: DataLayerFeature[];
   selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
 }) {
-  const { data: features = [] } = useLayerFeatures(layer.id);
   if (features.length === 0) return null;
   const fc: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
@@ -142,6 +143,32 @@ function LayerRenderer({
     />
   );
 }
+
+function ActiveLayer({
+  layer,
+  selectedFeatureId,
+  onFeatureClick,
+  onLoaded,
+}: {
+  layer: DataLayer;
+  selectedFeatureId: string | null;
+  onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
+  onLoaded: (layerId: string, features: DataLayerFeature[]) => void;
+}) {
+  const { data: features = [] } = useLayerFeatures(layer.id);
+  useEffect(() => {
+    onLoaded(layer.id, features);
+  }, [layer.id, features, onLoaded]);
+  return (
+    <LayerRenderer
+      layer={layer}
+      features={features}
+      selectedFeatureId={selectedFeatureId}
+      onFeatureClick={onFeatureClick}
+    />
+  );
+}
+
 
 export function MapaInterativo() {
   const { canEditProperties } = useAuth();
