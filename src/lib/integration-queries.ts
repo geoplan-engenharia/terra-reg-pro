@@ -137,3 +137,70 @@ export function useLookupCarFeature() {
     },
   });
 }
+
+// Exclui um job: remove arquivo do storage + feições + camada (se órfã) + o registro do job
+export function useDeleteIntegrationJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { job: IntegrationJob; alsoDeleteLayer?: boolean }) => {
+      const { job, alsoDeleteLayer = true } = input;
+
+      // 1) Remove arquivo do storage (se existir)
+      if (job.storage_path) {
+        await sb.storage.from("integration-uploads").remove([job.storage_path]);
+      }
+
+      // 2) Remove camada + feições associadas (cascade via FK não existe, então faz manual)
+      if (alsoDeleteLayer && job.layer_id) {
+        await sb.from("data_layer_features").delete().eq("layer_id", job.layer_id);
+        await sb.from("data_layers").delete().eq("id", job.layer_id);
+      }
+
+      // 3) Remove o job
+      const { error } = await sb.from("integration_jobs").delete().eq("id", job.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integration_jobs"] });
+      qc.invalidateQueries({ queryKey: ["data_layers"] });
+    },
+  });
+}
+
+// Limpa arquivos órfãos do bucket (que não estão referenciados por nenhum job atual)
+export function useCleanupOrphanFiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<{ removed: number; kept: number }> => {
+      // 1) Lista todos os jobs com storage_path
+      const { data: jobs, error: jobsErr } = await sb
+        .from("integration_jobs").select("storage_path").not("storage_path", "is", null);
+      if (jobsErr) throw jobsErr;
+      const referenced = new Set<string>((jobs ?? []).map((j: { storage_path: string }) => j.storage_path));
+
+      // 2) Lista arquivos do bucket recursivamente
+      const allFiles: string[] = [];
+      const walk = async (prefix: string) => {
+        const { data, error } = await sb.storage.from("integration-uploads").list(prefix, { limit: 1000 });
+        if (error) throw error;
+        for (const item of data ?? []) {
+          const path = prefix ? `${prefix}/${item.name}` : item.name;
+          if (item.id) allFiles.push(path); // arquivo
+          else await walk(path); // pasta
+        }
+      };
+      await walk("");
+
+      // 3) Remove os que não têm referência
+      const orphans = allFiles.filter((p) => !referenced.has(p));
+      if (orphans.length > 0) {
+        const { error: rmErr } = await sb.storage.from("integration-uploads").remove(orphans);
+        if (rmErr) throw rmErr;
+      }
+      return { removed: orphans.length, kept: allFiles.length - orphans.length };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integration_jobs"] });
+    },
+  });
+}
