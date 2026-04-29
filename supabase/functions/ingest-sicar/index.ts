@@ -172,14 +172,31 @@ Deno.serve(async (req) => {
     // Limpa features antigas
     await admin.from("data_layer_features").delete().eq("layer_id", layer.id);
 
-    // Pré-monta todas as linhas (rápido, em memória)
-    const allRows = features.map((f) => {
+    // Stream-insere em lotes para evitar duplicar tudo em memória.
+    // Constrói cada linha sob demanda e libera referência da feature original.
+    const BATCH = 300;
+    const total = features.length;
+    let inserted = 0;
+    let batch: any[] = [];
+
+    const flush = async () => {
+      if (batch.length === 0) return;
+      const toInsert = batch;
+      batch = [];
+      const { error: insErr } = await admin.from("data_layer_features").insert(toInsert);
+      if (insErr) throw new Error(`Erro ao inserir lote: ${insErr.message}`);
+      inserted += toInsert.length;
+    };
+
+    for (let i = 0; i < total; i++) {
+      const f = features[i];
+      features[i] = null as any; // libera referência para GC
+      if (!f?.geometry) continue;
       const props = f.properties ?? {};
       const externalId = props.cod_imovel ?? props.COD_IMOVEL ?? props.car_code ?? props.CAR ?? null;
       const muni = props.municipio ?? props.MUNICIPIO ?? props.NM_MUN ?? null;
       const uf = props.uf ?? props.UF ?? props.SIGLA_UF ?? job.uf ?? null;
-      const area = areaHa(f.geometry);
-      return {
+      batch.push({
         layer_id: layer.id,
         data_source_key: layerKey,
         external_id: externalId,
@@ -187,29 +204,20 @@ Deno.serve(async (req) => {
         properties_json: props,
         municipality: muni,
         uf,
-        area_ha: area,
-      };
-    }).filter((r) => r.geometry_geojson);
+        area_ha: areaHa(f.geometry),
+      });
 
-    // Insere em lotes paralelos (concorrência limitada)
-    const BATCH = 500;
-    const CONCURRENCY = 4;
-    let inserted = 0;
-    const chunks: typeof allRows[] = [];
-    for (let i = 0; i < allRows.length; i += BATCH) chunks.push(allRows.slice(i, i + BATCH));
-
-    for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-      const slice = chunks.slice(i, i + CONCURRENCY);
-      await Promise.all(slice.map(async (batch) => {
-        const { error: insErr } = await admin.from("data_layer_features").insert(batch);
-        if (insErr) throw new Error(`Erro ao inserir lote: ${insErr.message}`);
-        inserted += batch.length;
-      }));
-      await admin.from("integration_jobs").update({
-        features_imported: inserted,
-        log: `Inseridas ${inserted}/${allRows.length} feições...`,
-      }).eq("id", job.id);
+      if (batch.length >= BATCH) {
+        await flush();
+        if (inserted % 3000 === 0) {
+          await admin.from("integration_jobs").update({
+            features_imported: inserted,
+            log: `Inseridas ${inserted}/${total} feições...`,
+          }).eq("id", job.id);
+        }
+      }
     }
+    await flush();
 
     // Cruza com rural_properties via código CAR
     await admin.from("integration_jobs").update({
