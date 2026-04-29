@@ -68,13 +68,24 @@ export function useLayerFeatures(layerId: string | null) {
     queryKey: ["layer_features", layerId],
     enabled: !!layerId,
     queryFn: async (): Promise<DataLayerFeature[]> => {
-      const { data, error } = await sb
-        .from("data_layer_features")
-        .select("*")
-        .eq("layer_id", layerId!)
-        .limit(500);
-      if (error) throw error;
-      return (data ?? []) as DataLayerFeature[];
+      // Supabase caps each response at 1000 rows. Paginate via range() up to a
+      // sensible browser-render max so big SICAR layers (10k+ feições) appear.
+      const PAGE = 1000;
+      const MAX = 20000;
+      const all: DataLayerFeature[] = [];
+      for (let from = 0; from < MAX; from += PAGE) {
+        const to = from + PAGE - 1;
+        const { data, error } = await sb
+          .from("data_layer_features")
+          .select("*")
+          .eq("layer_id", layerId!)
+          .range(from, to);
+        if (error) throw error;
+        const rows = (data ?? []) as DataLayerFeature[];
+        all.push(...rows);
+        if (rows.length < PAGE) break;
+      }
+      return all;
     },
   });
 }
