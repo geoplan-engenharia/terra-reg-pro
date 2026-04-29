@@ -3,13 +3,14 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { useState, useRef, useMemo } from "react";
 import {
   Plug, Plus, Upload, Loader2, CheckCircle2, XCircle, Clock,
-  FileArchive, MapPin, Layers, AlertCircle, X
+  FileArchive, MapPin, Layers, AlertCircle, X, Trash2, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   useIntegrationProviders, useIntegrationJobs, useUpsertProvider,
-  useUploadAndIngestSicar, type IntegrationProvider, type IntegrationJobStatus,
+  useUploadAndIngestSicar, useDeleteIntegrationJob, useCleanupOrphanFiles,
+  type IntegrationProvider, type IntegrationJobStatus, type IntegrationJob,
 } from "@/lib/integration-queries";
 
 export const Route = createFileRoute("/admin/integracoes")({
@@ -37,8 +38,11 @@ function IntegracoesPage() {
   const { data: jobs = [] } = useIntegrationJobs();
   const upsert = useUpsertProvider();
   const ingest = useUploadAndIngestSicar();
+  const deleteJob = useDeleteIntegrationJob();
+  const cleanupOrphans = useCleanupOrphanFiles();
   const [newOpen, setNewOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<IntegrationProvider | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<IntegrationJob | null>(null);
 
   const sicarProviders = useMemo(
     () => providers.filter((p) => p.kind === "shapefile_upload"),
@@ -90,6 +94,23 @@ function IntegracoesPage() {
                 Criar provedor SICAR
               </button>
             )}
+            <button
+              onClick={async () => {
+                if (!confirm("Remover todos os arquivos órfãos do storage (que não estão associados a nenhuma execução)?")) return;
+                try {
+                  const r = await cleanupOrphans.mutateAsync();
+                  toast.success(`Limpeza concluída: ${r.removed} arquivo(s) removido(s), ${r.kept} mantido(s).`);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+              disabled={cleanupOrphans.isPending}
+              title="Remove arquivos do bucket que não estão referenciados em nenhuma execução"
+              className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-warning/40 bg-warning/5 text-warning text-xs font-medium hover:bg-warning/10 transition disabled:opacity-50"
+            >
+              {cleanupOrphans.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Limpar órfãos
+            </button>
             <button
               onClick={() => setNewOpen(true)}
               className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-xs font-medium hover:bg-accent/10 transition"
@@ -159,6 +180,7 @@ function IntegracoesPage() {
                     <th className="text-right px-3 py-2 font-medium">Feições</th>
                     <th className="text-right px-3 py-2 font-medium">Imóveis vinculados</th>
                     <th className="text-left px-3 py-2 font-medium">Quando</th>
+                    <th className="text-right px-3 py-2 font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -187,6 +209,16 @@ function IntegracoesPage() {
                             <div className="text-info text-[10px] mt-0.5">{j.log}</div>
                           )}
                         </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            onClick={() => setConfirmDelete(j)}
+                            disabled={j.status === "processando"}
+                            title="Excluir execução, arquivo e camada associada"
+                            className="inline-flex items-center justify-center h-7 w-7 rounded border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -213,6 +245,46 @@ function IntegracoesPage() {
           }}
           isSubmitting={ingest.isPending}
         />
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-card border border-border rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border">
+              <div className="text-sm font-semibold text-destructive flex items-center gap-2">
+                <Trash2 className="h-4 w-4" /> Excluir execução?
+              </div>
+            </div>
+            <div className="p-4 space-y-2 text-xs">
+              <p>Esta ação irá remover permanentemente:</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
+                <li>O arquivo do storage ({confirmDelete.storage_path?.split("/").pop()})</li>
+                <li>A camada e todas as feições importadas (se houver)</li>
+                <li>O registro desta execução</li>
+              </ul>
+              <p className="pt-2 text-warning">Imóveis cadastrados vinculados não são afetados — apenas a camada visual no mapa.</p>
+            </div>
+            <div className="p-4 border-t border-border flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="h-9 px-3 rounded-md border border-border text-xs hover:bg-accent/10">Cancelar</button>
+              <button
+                disabled={deleteJob.isPending}
+                onClick={async () => {
+                  try {
+                    await deleteJob.mutateAsync({ job: confirmDelete });
+                    toast.success("Execução excluída");
+                    setConfirmDelete(null);
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
+                className="h-9 px-4 rounded-md bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {deleteJob.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {newOpen && (
