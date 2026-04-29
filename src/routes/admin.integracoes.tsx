@@ -95,6 +95,23 @@ function IntegracoesPage() {
               </button>
             )}
             <button
+              onClick={async () => {
+                if (!confirm("Remover todos os arquivos órfãos do storage (que não estão associados a nenhuma execução)?")) return;
+                try {
+                  const r = await cleanupOrphans.mutateAsync();
+                  toast.success(`Limpeza concluída: ${r.removed} arquivo(s) removido(s), ${r.kept} mantido(s).`);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+              disabled={cleanupOrphans.isPending}
+              title="Remove arquivos do bucket que não estão referenciados em nenhuma execução"
+              className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-warning/40 bg-warning/5 text-warning text-xs font-medium hover:bg-warning/10 transition disabled:opacity-50"
+            >
+              {cleanupOrphans.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Limpar órfãos
+            </button>
+            <button
               onClick={() => setNewOpen(true)}
               className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-xs font-medium hover:bg-accent/10 transition"
             >
