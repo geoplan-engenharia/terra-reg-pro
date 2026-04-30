@@ -41,6 +41,7 @@ function IntegracoesPage() {
   const ingest = useUploadAndIngestSicar();
   const deleteJob = useDeleteIntegrationJob();
   const cleanupOrphans = useCleanupOrphanFiles();
+  const cancelJob = useCancelIntegrationJob();
   const [newOpen, setNewOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<IntegrationProvider | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<IntegrationJob | null>(null);
