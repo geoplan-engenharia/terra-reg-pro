@@ -3,13 +3,14 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { useState, useRef, useMemo } from "react";
 import {
   Plug, Plus, Upload, Loader2, CheckCircle2, XCircle, Clock,
-  FileArchive, MapPin, Layers, AlertCircle, X, Trash2, Sparkles
+  FileArchive, MapPin, Layers, AlertCircle, X, Trash2, Sparkles, Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   useIntegrationProviders, useIntegrationJobs, useUpsertProvider,
   useUploadAndIngestSicar, useDeleteIntegrationJob, useCleanupOrphanFiles,
+  useCancelIntegrationJob,
   type IntegrationProvider, type IntegrationJobStatus, type IntegrationJob,
 } from "@/lib/integration-queries";
 
@@ -40,6 +41,7 @@ function IntegracoesPage() {
   const ingest = useUploadAndIngestSicar();
   const deleteJob = useDeleteIntegrationJob();
   const cleanupOrphans = useCleanupOrphanFiles();
+  const cancelJob = useCancelIntegrationJob();
   const [newOpen, setNewOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<IntegrationProvider | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<IntegrationJob | null>(null);
@@ -210,14 +212,34 @@ function IntegracoesPage() {
                           )}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          <button
-                            onClick={() => setConfirmDelete(j)}
-                            disabled={j.status === "processando"}
-                            title="Excluir execução, arquivo e camada associada"
-                            className="inline-flex items-center justify-center h-7 w-7 rounded border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <div className="inline-flex items-center gap-1">
+                            {(j.status === "pendente" || j.status === "processando") && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm("Cancelar esta execução? O processo em andamento será marcado como cancelado.")) return;
+                                  try {
+                                    await cancelJob.mutateAsync(j);
+                                    toast.success("Execução cancelada");
+                                  } catch (e) {
+                                    toast.error((e as Error).message);
+                                  }
+                                }}
+                                disabled={cancelJob.isPending}
+                                title="Cancelar execução em andamento"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded border border-border hover:bg-warning/10 hover:text-warning hover:border-warning/40 transition disabled:opacity-30"
+                              >
+                                <Ban className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setConfirmDelete(j)}
+                              disabled={j.status === "processando"}
+                              title="Excluir execução, arquivo e camada associada"
+                              className="inline-flex items-center justify-center h-7 w-7 rounded border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

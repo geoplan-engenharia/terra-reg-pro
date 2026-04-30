@@ -138,6 +138,29 @@ export function useLookupCarFeature() {
   });
 }
 
+// Cancela um job em andamento: marca como 'cancelado' (a edge function que já está rodando
+// não pode ser interrompida no meio, mas o job sai da lista de "em processamento" e
+// novas atualizações de log são ignoradas pela UI; depois pode ser excluído normalmente).
+export function useCancelIntegrationJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (job: IntegrationJob) => {
+      if (job.status !== "pendente" && job.status !== "processando") {
+        throw new Error("Apenas execuções pendentes ou em processamento podem ser canceladas");
+      }
+      const { error } = await sb.from("integration_jobs").update({
+        status: "cancelado",
+        error_message: "Cancelado manualmente pelo administrador",
+        finished_at: new Date().toISOString(),
+      }).eq("id", job.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integration_jobs"] });
+    },
+  });
+}
+
 // Exclui um job: remove arquivo do storage + feições + camada (se órfã) + o registro do job
 export function useDeleteIntegrationJob() {
   const qc = useQueryClient();
