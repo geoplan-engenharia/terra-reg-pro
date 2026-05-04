@@ -105,6 +105,45 @@ Deno.serve(async (req) => {
       log: "Baixando arquivo...",
     }).eq("id", job.id);
 
+    // Processa em background para não estourar o tempo/recursos da requisição HTTP.
+    // O cliente acompanha o status via polling em integration_jobs.
+    // @ts-ignore - EdgeRuntime existe no runtime Deno do Supabase
+    EdgeRuntime.waitUntil(processJob(admin, job, provider).catch(async (err) => {
+      const message = (err as Error).message ?? String(err);
+      console.error("[ingest-sicar] background error:", message);
+      await admin.from("integration_jobs").update({
+        status: "erro", error_message: message,
+        finished_at: new Date().toISOString(),
+      }).eq("id", job.id);
+    }));
+
+    return new Response(JSON.stringify({ ok: true, job_id: job.id, background: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  } catch (err) {
+    const message = (err as Error).message ?? String(err);
+    console.error("ingest-sicar error:", message);
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      if (body.job_id) {
+        const admin = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        await admin.from("integration_jobs").update({
+          status: "erro", error_message: message,
+          finished_at: new Date().toISOString(),
+        }).eq("id", body.job_id);
+      }
+    } catch { /* ignore */ }
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+
+async function processJob(admin: any, job: any, provider: any): Promise<void> {
     // Download do arquivo
     const { data: fileBlob, error: dlErr } = await admin.storage
       .from("integration-uploads").download(job.storage_path);
@@ -237,31 +276,6 @@ Deno.serve(async (req) => {
       log: `Sucesso: ${inserted} feições importadas, ${linked ?? 0} imóveis atualizados.`,
     }).eq("id", job.id);
 
-    return new Response(JSON.stringify({
-      ok: true, layer_id: layer.id, features: inserted, linked: linked ?? 0,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.log(`[ingest-sicar] done: layer=${layer.id} features=${inserted} linked=${linked ?? 0}`);
+}
 
-  } catch (err) {
-    const message = (err as Error).message ?? String(err);
-    console.error("ingest-sicar error:", message);
-
-    // Marca job como erro se possível
-    try {
-      const body = await req.clone().json().catch(() => ({}));
-      if (body.job_id) {
-        const admin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        await admin.from("integration_jobs").update({
-          status: "erro", error_message: message,
-          finished_at: new Date().toISOString(),
-        }).eq("id", body.job_id);
-      }
-    } catch { /* ignore */ }
-
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-});
