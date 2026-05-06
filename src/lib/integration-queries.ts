@@ -46,7 +46,7 @@ export interface IntegrationJob {
 }
 
 export interface ImportProgress {
-  phase: "parsing" | "uploading" | "starting" | "processing" | "finalizing" | "done";
+  phase: "parsing" | "starting" | "processing" | "finalizing" | "done";
   processed: number;
   total: number;
   failed: number;
@@ -123,10 +123,9 @@ export function useUploadAndIngestSicar(
       if (total === 0) throw new Error("Shapefile sem feições");
       onProgress?.({ phase: "parsing", processed: total, total, failed: 0 });
 
-      // 2) Cria job (sem ZIP, apenas referência ao JSON intermediário)
-      const ts = Date.now();
-      const safeBase = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/\.zip$/i, "");
+      // 2) Cria job e prepara camada; as feições seguem em chunks pelo frontend
       const { data: { user } } = await sb.auth.getUser();
+      onProgress?.({ phase: "starting", processed: 0, total, failed: 0 });
       const { data: job, error: jobErr } = await sb.from("integration_jobs").insert({
         provider_id: provider.id,
         triggered_by: user?.id ?? null,
@@ -136,18 +135,7 @@ export function useUploadAndIngestSicar(
       }).select().single();
       if (jobErr) throw new Error(`Falha ao criar job: ${jobErr.message}`);
 
-      const jsonPath = `geojson/${job.id}/${ts}-${safeBase}.json`;
-
-      // 3) Upload do JSON puro (texto leve) para o storage
-      onProgress?.({ phase: "uploading", processed: 0, total, failed: 0 });
-      const jsonBlob = new Blob([JSON.stringify(features)], { type: "application/json" });
-      const { error: upErr } = await sb.storage.from("integration-uploads").upload(jsonPath, jsonBlob, {
-        contentType: "application/json",
-        upsert: false,
-      });
-      if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
-
-      // 4) Cria/atualiza camada (start leve inline) e atualiza job
+      // 3) Cria/atualiza camada (start leve inline) e atualiza job
       const layerKey = provider.data_source_key ?? `sicar-${uf.toLowerCase()}`;
       const layerName = `SICAR — ${uf.toUpperCase()}${label ? ` (${label})` : ""}`;
       await sb.from("data_sources").upsert({
@@ -178,8 +166,8 @@ export function useUploadAndIngestSicar(
       await sb.from("integration_jobs").update({
         status: "processando",
         started_at: new Date().toISOString(),
-        storage_path: jsonPath,
-        geojson_path: jsonPath,
+        storage_path: file.name,
+        geojson_path: null,
         total_features: total,
         processed_features: 0,
         failed_features: 0,
@@ -187,7 +175,7 @@ export function useUploadAndIngestSicar(
         log: `Parse local concluído: ${total.toLocaleString("pt-BR")} feições. Iniciando lotes...`,
       }).eq("id", job.id);
 
-      // 5) Loop de chunks
+      // 4) Loop de chunks: envia apenas o slice atual para a edge function
       let offset = 0;
       let totalFailed = 0;
       onProgress?.({ phase: "processing", processed: 0, total, failed: 0 });
@@ -199,22 +187,23 @@ export function useUploadAndIngestSicar(
           throw new Error("Importação cancelada pelo usuário");
         }
 
+        const chunk = features.slice(offset, offset + CHUNK_SIZE);
         const { data: chunkRes, error: chunkErr } = await sb.functions.invoke(
           "process-shapefile-chunk",
-          { body: { job_id: job.id, offset, limit: CHUNK_SIZE } }
+          { body: { job_id: job.id, layer_id: layer.id, features: chunk, offset, total } }
         );
         if (chunkErr) {
           if (offset === 0) throw new Error(`Primeiro lote falhou: ${chunkErr.message}`);
           console.error("Chunk error:", chunkErr);
-          totalFailed += CHUNK_SIZE;
-          offset += CHUNK_SIZE;
+          totalFailed += chunk.length;
+          offset += chunk.length;
           if (offset >= total) break;
           await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
           continue;
         }
         if (chunkRes?.cancelled) throw new Error("Importação cancelada pelo usuário");
         totalFailed += chunkRes?.failed ?? 0;
-        offset = chunkRes?.nextOffset ?? offset + CHUNK_SIZE;
+        offset = chunkRes?.nextOffset ?? offset + chunk.length;
         onProgress?.({
           phase: "processing",
           processed: Math.min(offset, total),
@@ -225,7 +214,7 @@ export function useUploadAndIngestSicar(
         await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
       }
 
-      // 6) Finaliza
+      // 5) Finaliza
       onProgress?.({ phase: "finalizing", processed: total, total, failed: totalFailed });
       const { data: finRes, error: finErr } = await sb.functions.invoke(
         "finalize-shapefile-import",
