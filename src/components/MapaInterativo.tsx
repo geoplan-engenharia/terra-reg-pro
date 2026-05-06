@@ -185,13 +185,34 @@ function ActiveLayer({
   zoom: number;
   selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
-  onLoaded: (layerId: string, features: DataLayerFeature[]) => void;
+  onLoaded: (layerId: string, info: { mode: LayerRenderMode; count: number }) => void;
   onError: (layerId: string) => void;
 }) {
-  const { data: features = [], isError } = useFeaturesInBbox(layer.id, bbox, zoom);
-  useEffect(() => { onLoaded(layer.id, features); }, [layer.id, features, onLoaded]);
-  useEffect(() => { if (isError) onError(layer.id); }, [isError, layer.id, onError]);
+  const mode = modeForZoom(zoom);
+  // Polygons: only at high zoom and inside bbox
+  const { data: features = [], isError: polyError } = useFeaturesInBbox(
+    layer.id,
+    mode === "polygon" ? bbox : null,
+    zoom,
+  );
+  // Density centroids: cached for density+cluster modes
+  const { data: density = [], isError: densError } = useFeaturesDensity(
+    layer.id,
+    mode !== "polygon",
+  );
+
+  useEffect(() => {
+    if (mode === "polygon") onLoaded(layer.id, { mode, count: features.length });
+    else onLoaded(layer.id, { mode, count: density.length });
+  }, [layer.id, mode, features.length, density.length, onLoaded]);
+
+  useEffect(() => {
+    if (polyError || densError) onError(layer.id);
+  }, [polyError, densError, layer.id, onError]);
+
   if (zoom < 6) return null;
+  if (mode === "density") return <HeatLayer points={density} color={layer.color} />;
+  if (mode === "cluster") return <ClusterLayer points={density} color={layer.color} />;
   return (
     <LayerRenderer
       layer={layer}
