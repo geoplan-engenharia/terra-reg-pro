@@ -1,10 +1,17 @@
 import { Layers, Eye, EyeOff, Crosshair, RotateCcw } from "lucide-react";
 import type { DataLayer } from "@/lib/layer-queries";
 
+type LayerRenderMode = "density" | "cluster" | "polygon";
+const MODE_LABEL: Record<LayerRenderMode, string> = {
+  density: "Densidade",
+  cluster: "Clusters",
+  polygon: "Polígonos",
+};
+
 export function LayerControl({
   layers,
   activeIds,
-  loadedCounts,
+  layerStatus,
   onToggle,
   onZoom,
   onActivateAll,
@@ -13,7 +20,7 @@ export function LayerControl({
 }: {
   layers: DataLayer[];
   activeIds: Record<string, boolean>;
-  loadedCounts?: Record<string, number>;
+  layerStatus?: Record<string, { mode: LayerRenderMode; count: number }>;
   onToggle: (id: string) => void;
   onZoom: (layer: DataLayer) => void;
   onActivateAll: () => void;
