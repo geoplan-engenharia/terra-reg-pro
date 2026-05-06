@@ -256,15 +256,23 @@ function IntegracoesPage() {
       {selectedProvider && (
         <UploadModal
           provider={selectedProvider}
-          onClose={() => setSelectedProvider(null)}
+          onClose={() => { if (!ingest.isPending) { setSelectedProvider(null); setProgress(null); } }}
+          progress={progress}
           onSubmit={async (file, uf, label) => {
             try {
-              toast.info("Enviando arquivo... isso pode levar alguns minutos.");
+              setProgress({ phase: "uploading", processed: 0, total: 0, failed: 0 });
               const result = await ingest.mutateAsync({ provider: selectedProvider, file, uf, label });
-              toast.success(`Ingestão concluída: ${result?.features ?? 0} feições, ${result?.linked ?? 0} imóveis vinculados.`);
+              const failed = result?.failed ?? 0;
+              if (failed > 0) {
+                toast.warning(`⚠️ ${result?.features ?? 0} importadas, ${failed} com erro.`);
+              } else {
+                toast.success(`✅ ${result?.features ?? 0} feições importadas, ${result?.linked ?? 0} imóveis vinculados.`);
+              }
               setSelectedProvider(null);
+              setProgress(null);
             } catch (e) {
               toast.error((e as Error).message);
+              setProgress(null);
             }
           }}
           isSubmitting={ingest.isPending}
