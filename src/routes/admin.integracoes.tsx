@@ -268,7 +268,7 @@ function IntegracoesPage() {
           progress={progress}
           onSubmit={async (file, uf, label) => {
             try {
-              setProgress({ phase: "uploading", processed: 0, total: 0, failed: 0 });
+              setProgress({ phase: "parsing", processed: 0, total: 0, failed: 0 });
               const result = await ingest.mutateAsync({ provider: selectedProvider, file, uf, label });
               const failed = result?.failed ?? 0;
               if (failed > 0) {
@@ -404,8 +404,11 @@ function UploadModal({
     ? Math.min(100, Math.round((progress.processed / progress.total) * 100))
     : 0;
   const phaseLabel: Record<ImportProgress["phase"], string> = {
-    uploading: "Enviando arquivo para o storage...",
-    starting: "Parseando shapefile e criando camada...",
+    parsing: progress && progress.total > 0
+      ? `Lendo shapefile localmente... ${progress.total.toLocaleString("pt-BR")} feições encontradas`
+      : "Lendo shapefile localmente no navegador...",
+    uploading: "Enviando GeoJSON para o storage...",
+    starting: "Preparando camada...",
     processing: `Processando feições... ${progress?.processed.toLocaleString("pt-BR") ?? 0} / ${progress?.total.toLocaleString("pt-BR") ?? 0}`,
     finalizing: "Cruzando com imóveis cadastrados...",
     done: "Concluído!",
