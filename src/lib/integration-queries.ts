@@ -132,8 +132,7 @@ export function useUploadAndIngestSicar(
         body: { job_id: job.id },
       });
       if (startErr) throw new Error(`Inicialização falhou: ${startErr.message}`);
-      const total: number = startRes?.total_features ?? 0;
-      if (total === 0) throw new Error("Shapefile sem feições");
+      let total: number = startRes?.total_features ?? 0;
 
       // 4) Loop de chunks
       let offset = 0;
@@ -164,11 +163,15 @@ export function useUploadAndIngestSicar(
         if (chunkRes?.cancelled) {
           throw new Error("Importação cancelada pelo usuário");
         }
+        if (typeof chunkRes?.total === "number") {
+          total = chunkRes.total;
+        }
+        if (offset === 0 && total === 0) throw new Error("Shapefile sem feições");
         totalFailed += chunkRes?.failed ?? 0;
         offset = chunkRes?.nextOffset ?? offset + CHUNK_SIZE;
         onProgress?.({
           phase: "processing",
-          processed: Math.min(offset, total),
+          processed: total > 0 ? Math.min(offset, total) : offset,
           total,
           failed: totalFailed,
         });
