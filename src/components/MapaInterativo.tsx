@@ -494,6 +494,7 @@ export function MapaInterativo() {
           onZoom={zoomToLayer}
           onActivateAll={activateAll}
           onClearAll={clearAll}
+          onReset={resetLayers}
         />
 
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel overflow-hidden flex flex-col min-h-0">
