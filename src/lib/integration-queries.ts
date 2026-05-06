@@ -27,6 +27,7 @@ export interface IntegrationJob {
   triggered_by: string | null;
   status: IntegrationJobStatus;
   storage_path: string | null;
+  geojson_path: string | null;
   uf: string | null;
   source_label: string | null;
   features_imported: number;
@@ -126,15 +127,23 @@ export function useUploadAndIngestSicar(
       }).select().single();
       if (jobErr) throw new Error(`Falha ao criar job: ${jobErr.message}`);
 
-      // 3) START: parseia, cria camada, descobre total
+      // 3) START leve: cria camada e prepara o job
       onProgress?.({ phase: "starting", processed: 0, total: 0, failed: 0 });
       const { data: startRes, error: startErr } = await sb.functions.invoke("ingest-sicar", {
         body: { job_id: job.id },
       });
       if (startErr) throw new Error(`Inicialização falhou: ${startErr.message}`);
-      let total: number = startRes?.total_features ?? 0;
 
-      // 4) Loop de chunks
+      // 4) Parse único do ZIP para GeoJSON intermediário no storage
+      const { data: parseRes, error: parseErr } = await sb.functions.invoke("parse-shapefile-to-geojson", {
+        body: { job_id: job.id },
+      });
+      if (parseErr) throw new Error(`Conversão GeoJSON falhou: ${parseErr.message}`);
+      if (parseRes?.cancelled) throw new Error("Importação cancelada pelo usuário");
+      let total: number = parseRes?.total_features ?? startRes?.total_features ?? 0;
+      if (total === 0) throw new Error("Shapefile sem feições");
+
+      // 5) Loop de chunks
       let offset = 0;
       let totalFailed = 0;
       onProgress?.({ phase: "processing", processed: 0, total, failed: 0 });
@@ -182,7 +191,7 @@ export function useUploadAndIngestSicar(
         await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
       }
 
-      // 5) Finaliza: cruza com imóveis e marca sucesso
+      // 6) Finaliza: cruza com imóveis e marca sucesso
       onProgress?.({ phase: "finalizing", processed: total, total, failed: totalFailed });
       const { data: finRes, error: finErr } = await sb.functions.invoke(
         "finalize-shapefile-import",
