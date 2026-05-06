@@ -145,21 +145,45 @@ function LayerRenderer({
   );
 }
 
+function ViewportTracker({ onChange }: { onChange: (bbox: ViewportBbox, zoom: number) => void }) {
+  const map = useMapEvents({
+    moveend: () => emit(),
+    zoomend: () => emit(),
+    load: () => emit(),
+  });
+  function emit() {
+    const b = map.getBounds();
+    onChange(
+      { minLng: b.getWest(), minLat: b.getSouth(), maxLng: b.getEast(), maxLat: b.getNorth() },
+      map.getZoom(),
+    );
+  }
+  // emit once on mount
+  useEffect(() => { emit(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 function ActiveLayer({
   layer,
+  bbox,
+  zoom,
   selectedFeatureId,
   onFeatureClick,
   onLoaded,
+  onError,
 }: {
   layer: DataLayer;
+  bbox: ViewportBbox | null;
+  zoom: number;
   selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
   onLoaded: (layerId: string, features: DataLayerFeature[]) => void;
+  onError: (layerId: string) => void;
 }) {
-  const { data: features = [] } = useLayerFeatures(layer.id);
-  useEffect(() => {
-    onLoaded(layer.id, features);
-  }, [layer.id, features, onLoaded]);
+  const { data: features = [], isError } = useFeaturesInBbox(layer.id, bbox, zoom);
+  useEffect(() => { onLoaded(layer.id, features); }, [layer.id, features, onLoaded]);
+  useEffect(() => { if (isError) onError(layer.id); }, [isError, layer.id, onError]);
+  if (zoom < 6) return null;
   return (
     <LayerRenderer
       layer={layer}
