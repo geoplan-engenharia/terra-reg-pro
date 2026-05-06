@@ -102,6 +102,13 @@ Deno.serve(async (req) => {
     for (const fc of collections) if (fc?.features?.length) allFeatures.push(...fc.features);
     const total = allFeatures.length;
 
+    if (safeOffset === 0) {
+      await admin.from("integration_jobs").update({
+        total_features: total,
+        log: `Total identificado: ${total.toLocaleString("pt-BR")} feições. Processando em lotes...`,
+      }).eq("id", job.id);
+    }
+
     const slice = allFeatures.slice(safeOffset, safeOffset + safeLimit);
     const layerKey = job.storage_path.split("/")[0]; // provider.key
 
