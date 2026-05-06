@@ -407,7 +407,6 @@ function UploadModal({
     parsing: progress && progress.total > 0
       ? `Lendo shapefile localmente... ${progress.total.toLocaleString("pt-BR")} feições encontradas`
       : "Lendo shapefile localmente no navegador...",
-    uploading: "Enviando GeoJSON para o storage...",
     starting: "Preparando camada...",
     processing: `Processando feições... ${progress?.processed.toLocaleString("pt-BR") ?? 0} / ${progress?.total.toLocaleString("pt-BR") ?? 0}`,
     finalizing: "Cruzando com imóveis cadastrados...",
