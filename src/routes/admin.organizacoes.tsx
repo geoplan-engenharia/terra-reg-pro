@@ -28,9 +28,11 @@ function StatusBadge({ status }: { status: string | null }) {
     pausado: "bg-muted text-muted-foreground border-border",
     cancelado: "bg-destructive/15 text-destructive border-destructive/30",
     expirado: "bg-destructive/15 text-destructive border-destructive/30",
+    vitalicio: "bg-primary/15 text-primary border-primary/30",
   };
   const cls = map[status ?? ""] ?? "bg-muted text-muted-foreground border-border";
-  return <span className={`text-[11px] px-2 py-0.5 rounded-full border capitalize ${cls}`}>{status ?? "—"}</span>;
+  const label = status === "vitalicio" ? "Vitalício" : status ?? "—";
+  return <span className={`text-[11px] px-2 py-0.5 rounded-full border capitalize ${cls}`}>{label}</span>;
 }
 
 function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => void }) {
