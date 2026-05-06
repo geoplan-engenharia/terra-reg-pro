@@ -59,6 +59,7 @@ export function SubscriptionCard() {
     : false;
 
   const isTrial = subscription?.status === "trial";
+  const isLifetime = subscription?.status === "vitalicio";
   const expiresInDays = subscription?.expires_at
     ? Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / 86400000)
     : null;
@@ -81,12 +82,22 @@ export function SubscriptionCard() {
                     Trial
                   </span>
                 )}
+                {isLifetime && (
+                  <span className="ml-2 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary">
+                    Vitalício
+                  </span>
+                )}
               </div>
               {isTrial && expiresInDays !== null && (
                 <div className="mt-0.5 text-[11px] text-muted-foreground">
                   {expiresInDays > 0
                     ? `Expira em ${expiresInDays} dia${expiresInDays === 1 ? "" : "s"}`
                     : "Trial expirado"}
+                </div>
+              )}
+              {isLifetime && (
+                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                  Acesso vitalício concedido
                 </div>
               )}
             </div>

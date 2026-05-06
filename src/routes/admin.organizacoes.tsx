@@ -28,9 +28,11 @@ function StatusBadge({ status }: { status: string | null }) {
     pausado: "bg-muted text-muted-foreground border-border",
     cancelado: "bg-destructive/15 text-destructive border-destructive/30",
     expirado: "bg-destructive/15 text-destructive border-destructive/30",
+    vitalicio: "bg-primary/15 text-primary border-primary/30",
   };
   const cls = map[status ?? ""] ?? "bg-muted text-muted-foreground border-border";
-  return <span className={`text-[11px] px-2 py-0.5 rounded-full border capitalize ${cls}`}>{status ?? "—"}</span>;
+  const label = status === "vitalicio" ? "Vitalício" : status ?? "—";
+  return <span className={`text-[11px] px-2 py-0.5 rounded-full border capitalize ${cls}`}>{label}</span>;
 }
 
 function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => void }) {
@@ -51,16 +53,18 @@ function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => voi
     setExpiresAt(data.subscription.expires_at ? data.subscription.expires_at.slice(0, 10) : "");
   }
 
+  const isLifetime = status === "vitalicio";
+
   const save = async () => {
     try {
       await update.mutateAsync({
         organization_id: orgId,
         plan_key: planKey || undefined,
         billing_cycle: (billingCycle as "mensal" | "anual") || undefined,
-        status: (status as "ativo" | "trial" | "pausado" | "cancelado" | "expirado") || undefined,
-        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        status: (status as "ativo" | "trial" | "pausado" | "cancelado" | "expirado" | "vitalicio") || undefined,
+        expires_at: isLifetime ? null : (expiresAt ? new Date(expiresAt).toISOString() : null),
       });
-      toast.success("Assinatura atualizada");
+      toast.success(isLifetime ? "Acesso vitalício concedido" : "Assinatura atualizada");
     } catch (e) {
       toast.error("Falha ao atualizar", { description: (e as Error).message });
     }
@@ -129,6 +133,7 @@ function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => voi
                     <select className="mt-1 w-full bg-background border border-border rounded-md h-9 px-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
                       <option value="trial">Trial</option>
                       <option value="ativo">Ativo</option>
+                      <option value="vitalicio">Vitalício (sem expiração)</option>
                       <option value="pausado">Pausado</option>
                       <option value="cancelado">Cancelado</option>
                       <option value="expirado">Expirado</option>
@@ -136,7 +141,17 @@ function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => voi
                   </label>
                   <label className="text-xs">
                     <span className="text-muted-foreground">Validade</span>
-                    <input type="date" className="mt-1 w-full bg-background border border-border rounded-md h-9 px-2 text-sm" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+                    <input
+                      type="date"
+                      disabled={isLifetime}
+                      className="mt-1 w-full bg-background border border-border rounded-md h-9 px-2 text-sm disabled:opacity-50"
+                      value={isLifetime ? "" : expiresAt}
+                      onChange={(e) => setExpiresAt(e.target.value)}
+                      placeholder={isLifetime ? "Sem expiração" : ""}
+                    />
+                    {isLifetime && (
+                      <span className="mt-1 block text-[10px] text-primary">Acesso vitalício — sem data de expiração.</span>
+                    )}
                   </label>
                 </div>
                 <Button onClick={save} disabled={update.isPending} className="w-full">
