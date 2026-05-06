@@ -152,6 +152,9 @@ export function useUploadAndIngestSicar(
           { body: { job_id: job.id, offset, limit: CHUNK_SIZE } }
         );
         if (chunkErr) {
+          if (offset === 0 || total === 0) {
+            throw new Error(`Primeiro lote falhou: ${chunkErr.message}`);
+          }
           // Falha de um chunk inteiro: registra e tenta próximo
           console.error("Chunk error:", chunkErr);
           totalFailed += CHUNK_SIZE;
