@@ -403,12 +403,17 @@ export function MapaInterativo() {
           onFlyBounds={(b) => setFlyBounds(b)}
         />
 
+        <ViewportTracker onChange={handleViewport} />
+
         {activeLayersList.map((l) => (
           <ActiveLayer
             key={l.id}
             layer={l}
+            bbox={viewport}
+            zoom={zoomLevel}
             selectedFeatureId={selectedFeature?.feature.id ?? null}
             onLoaded={handleLayerLoaded}
+            onError={handleLayerError}
             onFeatureClick={(feature, layer) => {
               setSelectedFeature({ feature, layer });
               setSelectedId(null);
