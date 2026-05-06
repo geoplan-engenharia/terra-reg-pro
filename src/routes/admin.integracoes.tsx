@@ -12,6 +12,7 @@ import {
   useUploadAndIngestSicar, useDeleteIntegrationJob, useCleanupOrphanFiles,
   useCancelIntegrationJob,
   type IntegrationProvider, type IntegrationJobStatus, type IntegrationJob,
+  type ImportProgress,
 } from "@/lib/integration-queries";
 
 export const Route = createFileRoute("/admin/integracoes")({
@@ -38,7 +39,8 @@ function IntegracoesPage() {
   const { data: providers = [], isLoading } = useIntegrationProviders();
   const { data: jobs = [] } = useIntegrationJobs();
   const upsert = useUpsertProvider();
-  const ingest = useUploadAndIngestSicar();
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const ingest = useUploadAndIngestSicar(setProgress);
   const deleteJob = useDeleteIntegrationJob();
   const cleanupOrphans = useCleanupOrphanFiles();
   const cancelJob = useCancelIntegrationJob();
