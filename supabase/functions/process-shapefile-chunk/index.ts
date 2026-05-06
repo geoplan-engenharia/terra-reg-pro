@@ -1,14 +1,9 @@
 // Edge function: process-shapefile-chunk
-// Processa um lote de feições do shapefile já enviado para o storage.
+// Processa um lote de feições a partir do GeoJSON intermediário já salvo no storage.
 // Input:  { job_id: string, offset: number, limit: number }
 // Output: { processed, inserted, failed, total, hasMore, nextOffset }
-//
-// Estratégia: re-baixa e re-parseia o ZIP a cada chunk (edge functions são
-// stateless). Custa ~10-20s de parse por chunk para arquivos de 200MB, mas
-// cabe no timeout e mantém uso de memória estável (não acumula entre chunks).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import shp from "https://esm.sh/shpjs@4.0.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,17 +84,14 @@ Deno.serve(async (req) => {
     }
     if (!job.layer_id) throw new Error("Job sem layer_id (rode start primeiro)");
     if (!job.storage_path) throw new Error("Job sem storage_path");
+    if (!job.geojson_path) throw new Error("Job sem geojson_path (rode a conversão GeoJSON primeiro)");
 
-    // Download + parse
-    const { data: fileBlob, error: dlErr } = await admin.storage
-      .from("integration-uploads").download(job.storage_path);
-    if (dlErr || !fileBlob) throw new Error(`Falha no download: ${dlErr?.message}`);
-    const buffer = await fileBlob.arrayBuffer();
+    // Download do JSON intermediário já convertido por parse-shapefile-to-geojson.
+    const { data: jsonBlob, error: dlErr } = await admin.storage
+      .from("integration-uploads").download(job.geojson_path);
+    if (dlErr || !jsonBlob) throw new Error(`Falha no download do GeoJSON: ${dlErr?.message}`);
 
-    const parsed: any = await shp(buffer);
-    const collections = Array.isArray(parsed) ? parsed : [parsed];
-    const allFeatures: any[] = [];
-    for (const fc of collections) if (fc?.features?.length) allFeatures.push(...fc.features);
+    const allFeatures: any[] = JSON.parse(await jsonBlob.text());
     const total = allFeatures.length;
 
     if (safeOffset === 0) {
