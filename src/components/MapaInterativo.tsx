@@ -14,8 +14,16 @@ import { useAuth } from "@/lib/auth";
 import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
-import { useDataLayers, useFeaturesInBbox, type DataLayer, type DataLayerFeature, type ViewportBbox } from "@/lib/layer-queries";
+import { useDataLayers, useFeaturesInBbox, useFeaturesDensity, type DataLayer, type DataLayerFeature, type ViewportBbox } from "@/lib/layer-queries";
 import { useMapEvents } from "react-leaflet";
+import { HeatLayer, ClusterLayer } from "./LayerRenderingModes";
+
+export type LayerRenderMode = "density" | "cluster" | "polygon";
+export function modeForZoom(z: number): LayerRenderMode {
+  if (z < 8) return "density";
+  if (z < 12) return "cluster";
+  return "polygon";
+}
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
