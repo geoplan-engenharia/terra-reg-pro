@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import shp from "shpjs";
 
 export type IntegrationProviderKind = "shapefile_upload" | "rest_api" | "wms_wfs" | "scraping" | "manual";
 export type IntegrationProviderStatus = "ativo" | "planejado" | "desativado";
