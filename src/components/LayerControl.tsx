@@ -100,7 +100,6 @@ export function LayerControl({
                     {c.layer_type.replace("_", " ")} · {total.toLocaleString("pt-BR")} feições
                   </div>
                 </div>
-                </div>
                 {active ? (
                   <Eye className="h-3.5 w-3.5 text-primary" />
                 ) : (
