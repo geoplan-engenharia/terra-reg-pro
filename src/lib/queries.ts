@@ -943,7 +943,7 @@ export type OrganizationSubscription = {
   organization_id: string;
   plan_key: string;
   billing_cycle: "mensal" | "anual";
-  status: "ativo" | "trial" | "pausado" | "cancelado" | "expirado";
+  status: "ativo" | "trial" | "pausado" | "cancelado" | "expirado" | "vitalicio";
   started_at: string;
   expires_at: string | null;
   notes: string | null;
