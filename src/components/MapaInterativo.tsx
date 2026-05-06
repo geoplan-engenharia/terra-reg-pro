@@ -507,7 +507,7 @@ export function MapaInterativo() {
         <LayerControl
           layers={visibleLayers}
           activeIds={activeLayerIds}
-          loadedCounts={loadedCounts}
+          layerStatus={layerStatus}
           onToggle={toggleLayer}
           onZoom={zoomToLayer}
           onActivateAll={activateAll}
