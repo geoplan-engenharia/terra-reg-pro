@@ -310,20 +310,15 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
-  // Tracks loaded features per layer (for debug counts and "zoom to layer")
-  const [loadedFeatures, setLoadedFeatures] = useState<Record<string, DataLayerFeature[]>>({});
-  const handleLayerLoaded = useCallback((layerId: string, features: DataLayerFeature[]) => {
-    setLoadedFeatures((prev) => {
-      if (prev[layerId]?.length === features.length) return prev;
-      return { ...prev, [layerId]: features };
+  // Tracks render mode + count per active layer
+  const [layerStatus, setLayerStatus] = useState<Record<string, { mode: LayerRenderMode; count: number }>>({});
+  const handleLayerLoaded = useCallback((layerId: string, info: { mode: LayerRenderMode; count: number }) => {
+    setLayerStatus((prev) => {
+      const cur = prev[layerId];
+      if (cur && cur.mode === info.mode && cur.count === info.count) return prev;
+      return { ...prev, [layerId]: info };
     });
   }, []);
-
-  const loadedCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    Object.entries(loadedFeatures).forEach(([k, v]) => { counts[k] = v.length; });
-    return counts;
-  }, [loadedFeatures]);
 
   const zoomToLayer = useCallback(async (layer: DataLayer) => {
     // Activate if not already active so its features start loading
