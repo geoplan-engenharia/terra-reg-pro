@@ -12,6 +12,7 @@ import {
   useUploadAndIngestSicar, useDeleteIntegrationJob, useCleanupOrphanFiles,
   useCancelIntegrationJob,
   type IntegrationProvider, type IntegrationJobStatus, type IntegrationJob,
+  type ImportProgress,
 } from "@/lib/integration-queries";
 
 export const Route = createFileRoute("/admin/integracoes")({
@@ -38,7 +39,8 @@ function IntegracoesPage() {
   const { data: providers = [], isLoading } = useIntegrationProviders();
   const { data: jobs = [] } = useIntegrationJobs();
   const upsert = useUpsertProvider();
-  const ingest = useUploadAndIngestSicar();
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const ingest = useUploadAndIngestSicar(setProgress);
   const deleteJob = useDeleteIntegrationJob();
   const cleanupOrphans = useCleanupOrphanFiles();
   const cancelJob = useCancelIntegrationJob();
@@ -210,6 +212,14 @@ function IntegracoesPage() {
                           {j.log && j.status === "processando" && (
                             <div className="text-info text-[10px] mt-0.5">{j.log}</div>
                           )}
+                          {j.status === "processando" && j.total_features && j.total_features > 0 && (
+                            <div className="mt-1 h-1 w-32 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full bg-info transition-all"
+                                style={{ width: `${Math.min(100, Math.round((j.processed_features / j.total_features) * 100))}%` }}
+                              />
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="inline-flex items-center gap-1">
@@ -254,15 +264,23 @@ function IntegracoesPage() {
       {selectedProvider && (
         <UploadModal
           provider={selectedProvider}
-          onClose={() => setSelectedProvider(null)}
+          onClose={() => { if (!ingest.isPending) { setSelectedProvider(null); setProgress(null); } }}
+          progress={progress}
           onSubmit={async (file, uf, label) => {
             try {
-              toast.info("Enviando arquivo... isso pode levar alguns minutos.");
+              setProgress({ phase: "uploading", processed: 0, total: 0, failed: 0 });
               const result = await ingest.mutateAsync({ provider: selectedProvider, file, uf, label });
-              toast.success(`Ingestão concluída: ${result?.features ?? 0} feições, ${result?.linked ?? 0} imóveis vinculados.`);
+              const failed = result?.failed ?? 0;
+              if (failed > 0) {
+                toast.warning(`⚠️ ${result?.features ?? 0} importadas, ${failed} com erro.`);
+              } else {
+                toast.success(`✅ ${result?.features ?? 0} feições importadas, ${result?.linked ?? 0} imóveis vinculados.`);
+              }
               setSelectedProvider(null);
+              setProgress(null);
             } catch (e) {
               toast.error((e as Error).message);
+              setProgress(null);
             }
           }}
           isSubmitting={ingest.isPending}
@@ -369,27 +387,39 @@ function ProviderCard({ provider, onUpload, jobsCount }: { provider: Integration
 }
 
 function UploadModal({
-  provider, onClose, onSubmit, isSubmitting,
+  provider, onClose, onSubmit, isSubmitting, progress,
 }: {
   provider: IntegrationProvider;
   onClose: () => void;
   onSubmit: (file: File, uf: string, label?: string) => void;
   isSubmitting: boolean;
+  progress: ImportProgress | null;
 }) {
   const [uf, setUf] = useState("");
   const [label, setLabel] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
 
+  const pct = progress && progress.total > 0
+    ? Math.min(100, Math.round((progress.processed / progress.total) * 100))
+    : 0;
+  const phaseLabel: Record<ImportProgress["phase"], string> = {
+    uploading: "Enviando arquivo para o storage...",
+    starting: "Parseando shapefile e criando camada...",
+    processing: `Processando feições... ${progress?.processed.toLocaleString("pt-BR") ?? 0} / ${progress?.total.toLocaleString("pt-BR") ?? 0}`,
+    finalizing: "Cruzando com imóveis cadastrados...",
+    done: "Concluído!",
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={isSubmitting ? undefined : onClose}>
       <div className="bg-card border border-border rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
             <div className="text-sm font-semibold">Enviar shapefile</div>
             <div className="text-[11px] text-muted-foreground">{provider.name}</div>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          <button disabled={isSubmitting} onClick={onClose} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><X className="h-4 w-4" /></button>
         </div>
         <div className="p-4 space-y-3">
           <div>
@@ -434,18 +464,38 @@ function UploadModal({
             )}
           </div>
           <div className="rounded-md border border-warning/30 bg-warning/5 p-2.5 text-[11px] text-foreground/90">
-            ⚠️ Arquivos do SICAR podem ter centenas de MB. O processamento ocorre em segundo plano e pode levar alguns minutos.
+            ⚠️ Arquivos podem ter centenas de MB. O processamento é feito em lotes de 500 feições — você verá o progresso em tempo real.
           </div>
+
+          {progress && (
+            <div className="rounded-md border border-info/30 bg-info/5 p-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-foreground font-medium">{phaseLabel[progress.phase]}</span>
+                {progress.total > 0 && <span className="tabular-nums text-info font-semibold">{pct}%</span>}
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-info transition-all duration-300"
+                  style={{ width: progress.total > 0 ? `${pct}%` : "30%" }}
+                />
+              </div>
+              {progress.failed > 0 && (
+                <div className="text-[10px] text-warning">⚠️ {progress.failed.toLocaleString("pt-BR")} feição(ões) com erro</div>
+              )}
+            </div>
+          )}
         </div>
         <div className="p-4 border-t border-border flex items-center justify-end gap-2">
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border text-xs hover:bg-accent/10">Cancelar</button>
+          <button disabled={isSubmitting} onClick={onClose} className="h-9 px-3 rounded-md border border-border text-xs hover:bg-accent/10 disabled:opacity-50">
+            {isSubmitting ? "Aguarde..." : "Cancelar"}
+          </button>
           <button
             disabled={!uf || !file || isSubmitting}
             onClick={() => file && onSubmit(file, uf, label || undefined)}
             className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
           >
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-            Enviar e processar
+            {isSubmitting ? "Processando..." : "Enviar e processar"}
           </button>
         </div>
       </div>
