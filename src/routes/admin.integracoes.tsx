@@ -456,18 +456,38 @@ function UploadModal({
             )}
           </div>
           <div className="rounded-md border border-warning/30 bg-warning/5 p-2.5 text-[11px] text-foreground/90">
-            ⚠️ Arquivos do SICAR podem ter centenas de MB. O processamento ocorre em segundo plano e pode levar alguns minutos.
+            ⚠️ Arquivos podem ter centenas de MB. O processamento é feito em lotes de 500 feições — você verá o progresso em tempo real.
           </div>
+
+          {progress && (
+            <div className="rounded-md border border-info/30 bg-info/5 p-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-foreground font-medium">{phaseLabel[progress.phase]}</span>
+                {progress.total > 0 && <span className="tabular-nums text-info font-semibold">{pct}%</span>}
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-info transition-all duration-300"
+                  style={{ width: progress.total > 0 ? `${pct}%` : "30%" }}
+                />
+              </div>
+              {progress.failed > 0 && (
+                <div className="text-[10px] text-warning">⚠️ {progress.failed.toLocaleString("pt-BR")} feição(ões) com erro</div>
+              )}
+            </div>
+          )}
         </div>
         <div className="p-4 border-t border-border flex items-center justify-end gap-2">
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border text-xs hover:bg-accent/10">Cancelar</button>
+          <button disabled={isSubmitting} onClick={onClose} className="h-9 px-3 rounded-md border border-border text-xs hover:bg-accent/10 disabled:opacity-50">
+            {isSubmitting ? "Aguarde..." : "Cancelar"}
+          </button>
           <button
             disabled={!uf || !file || isSubmitting}
             onClick={() => file && onSubmit(file, uf, label || undefined)}
             className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
           >
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-            Enviar e processar
+            {isSubmitting ? "Processando..." : "Enviar e processar"}
           </button>
         </div>
       </div>
