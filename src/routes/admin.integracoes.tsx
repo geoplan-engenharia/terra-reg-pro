@@ -199,8 +199,8 @@ function IntegracoesPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2">{j.uf ?? "—"}</td>
-                        <td className="px-3 py-2 max-w-xs truncate" title={j.storage_path ?? ""}>
-                          {j.storage_path?.split("/").pop() ?? "—"}
+                        <td className="px-3 py-2 max-w-xs truncate" title={j.source_label ?? ""}>
+                          {j.source_label ?? "—"}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">{j.features_imported.toLocaleString("pt-BR")}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{j.properties_linked}</td>
@@ -298,7 +298,6 @@ function IntegracoesPage() {
             <div className="p-4 space-y-2 text-xs">
               <p>Esta ação irá remover permanentemente:</p>
               <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
-                <li>O arquivo do storage ({confirmDelete.storage_path?.split("/").pop()})</li>
                 <li>A camada e todas as feições importadas (se houver)</li>
                 <li>O registro desta execução</li>
               </ul>
@@ -407,7 +406,6 @@ function UploadModal({
     parsing: progress && progress.total > 0
       ? `Lendo shapefile localmente... ${progress.total.toLocaleString("pt-BR")} feições encontradas`
       : "Lendo shapefile localmente no navegador...",
-    uploading: "Enviando GeoJSON para o storage...",
     starting: "Preparando camada...",
     processing: `Processando feições... ${progress?.processed.toLocaleString("pt-BR") ?? 0} / ${progress?.total.toLocaleString("pt-BR") ?? 0}`,
     finalizing: "Cruzando com imóveis cadastrados...",

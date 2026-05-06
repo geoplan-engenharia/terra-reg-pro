@@ -1,6 +1,6 @@
 // Edge function: process-shapefile-chunk
-// Processa um lote de feições a partir do GeoJSON intermediário já salvo no storage.
-// Input:  { job_id: string, offset: number, limit: number }
+// Processa apenas as feições enviadas pelo frontend, sem baixar/parsear arquivos do storage.
+// Input:  { job_id: string, layer_id: string, features: Feature[], offset: number, total: number }
 // Output: { processed, inserted, failed, total, hasMore, nextOffset }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -13,8 +13,24 @@ const corsHeaders = {
 
 interface ChunkPayload {
   job_id: string;
+  layer_id: string;
+  features: any[];
   offset: number;
-  limit: number;
+  total: number;
+}
+
+function firstValue(props: Record<string, any>, keys: string[]): any {
+  for (const key of keys) {
+    const value = props[key];
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return null;
+}
+
+function numericValue(value: any): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function areaHa(geom: any): number | null {
@@ -65,10 +81,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { job_id, offset, limit } = (await req.json()) as ChunkPayload;
+    const { job_id, layer_id, features, offset, total } = (await req.json()) as ChunkPayload;
     if (!job_id) throw new Error("job_id é obrigatório");
-    const safeLimit = Math.min(Math.max(limit ?? 500, 50), 1000);
+    if (!layer_id) throw new Error("layer_id é obrigatório");
+    if (!Array.isArray(features)) throw new Error("features deve ser um array");
+    if (features.length > 500) throw new Error("Máximo de 500 feições por lote");
     const safeOffset = Math.max(offset ?? 0, 0);
+    const safeTotal = Math.max(total ?? features.length, features.length);
 
     const { data: job, error: jobErr } = await admin
       .from("integration_jobs").select("*").eq("id", job_id).single();
@@ -78,53 +97,44 @@ Deno.serve(async (req) => {
     if (job.status === "cancelado") {
       return new Response(JSON.stringify({
         processed: 0, inserted: 0, failed: 0,
-        total: job.total_features ?? 0, hasMore: false, nextOffset: safeOffset,
+        total: job.total_features ?? safeTotal, hasMore: false, nextOffset: safeOffset,
         cancelled: true,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if (!job.layer_id) throw new Error("Job sem layer_id (rode start primeiro)");
-    if (!job.storage_path) throw new Error("Job sem storage_path");
-    if (!job.geojson_path) throw new Error("Job sem geojson_path (rode a conversão GeoJSON primeiro)");
-
-    // Download do JSON intermediário já convertido por parse-shapefile-to-geojson.
-    const { data: jsonBlob, error: dlErr } = await admin.storage
-      .from("integration-uploads").download(job.geojson_path);
-    if (dlErr || !jsonBlob) throw new Error(`Falha no download do GeoJSON: ${dlErr?.message}`);
-
-    const allFeatures: any[] = JSON.parse(await jsonBlob.text());
-    const total = allFeatures.length;
+    if (job.layer_id && job.layer_id !== layer_id) throw new Error("layer_id não pertence ao job");
 
     if (safeOffset === 0) {
       await admin.from("integration_jobs").update({
-        total_features: total,
-        log: `Total identificado: ${total.toLocaleString("pt-BR")} feições. Processando em lotes...`,
+        total_features: safeTotal,
+        log: `Total identificado: ${safeTotal.toLocaleString("pt-BR")} feições. Processando em lotes...`,
       }).eq("id", job.id);
     }
 
-    const slice = allFeatures.slice(safeOffset, safeOffset + safeLimit);
     const { data: layerRow } = await admin
-      .from("data_layers").select("data_source_key").eq("id", job.layer_id).maybeSingle();
-    const layerKey = layerRow?.data_source_key ?? job.storage_path.split("/")[0];
+      .from("data_layers").select("data_source_key").eq("id", layer_id).maybeSingle();
+    if (!layerRow?.data_source_key) throw new Error("Camada não encontrada");
+    const layerKey = layerRow.data_source_key;
 
     // Constrói rows do lote
     const rows: any[] = [];
     let failed = 0;
-    for (const f of slice) {
+    for (const f of features) {
       try {
         if (!f?.geometry) { failed++; continue; }
         const props = f.properties ?? {};
-        const externalId = props.cod_imovel ?? props.COD_IMOVEL ?? props.car_code ?? props.CAR ?? null;
-        const muni = props.municipio ?? props.MUNICIPIO ?? props.NM_MUN ?? null;
-        const uf = props.uf ?? props.UF ?? props.SIGLA_UF ?? job.uf ?? null;
+        const externalId = firstValue(props, ["cod_imovel", "COD_IMOVEL", "car_code", "CAR", "id", "ID", "external_id"]);
+        const muni = firstValue(props, ["municipality", "municipio", "MUNICIPIO", "NM_MUN", "NOM_MUNICI", "nome_mun"]);
+        const uf = firstValue(props, ["uf", "UF", "SIGLA_UF", "estado", "ESTADO"]) ?? job.uf ?? null;
+        const area = numericValue(firstValue(props, ["area_ha", "AREA_HA", "num_area", "NUM_AREA", "AREA", "area"])) ?? areaHa(f.geometry);
         rows.push({
-          layer_id: job.layer_id,
+          layer_id,
           data_source_key: layerKey,
           external_id: externalId,
           geometry_geojson: f.geometry,
           properties_json: props,
           municipality: muni,
           uf,
-          area_ha: areaHa(f.geometry),
+          area_ha: area,
         });
       } catch {
         failed++;
@@ -133,8 +143,8 @@ Deno.serve(async (req) => {
 
     let inserted = 0;
     if (rows.length > 0) {
-      // Insere em sub-lotes de 200 para evitar payload grande
-      const SUB = 200;
+      // Insere em sub-lotes de 100 para manter payload e CPU baixos
+      const SUB = 100;
       for (let i = 0; i < rows.length; i += SUB) {
         const part = rows.slice(i, i + SUB);
         const { error: insErr } = await admin.from("data_layer_features").insert(part);
@@ -147,23 +157,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    const newProcessed = (job.processed_features ?? 0) + slice.length;
+    const processedNow = features.length;
+    const newProcessed = Math.max((job.processed_features ?? 0) + processedNow, safeOffset + processedNow);
     const newFailed = (job.failed_features ?? 0) + failed;
-    const nextOffset = safeOffset + slice.length;
-    const hasMore = nextOffset < total;
+    const nextOffset = safeOffset + processedNow;
+    const hasMore = nextOffset < safeTotal;
 
     await admin.from("integration_jobs").update({
       processed_features: newProcessed,
       failed_features: newFailed,
-      total_features: total,
-      log: `Processadas ${newProcessed.toLocaleString("pt-BR")}/${total.toLocaleString("pt-BR")} feições${newFailed > 0 ? ` (${newFailed} com erro)` : ""}.`,
+      total_features: safeTotal,
+      log: `Processadas ${newProcessed.toLocaleString("pt-BR")}/${safeTotal.toLocaleString("pt-BR")} feições${newFailed > 0 ? ` (${newFailed} com erro)` : ""}.`,
     }).eq("id", job.id);
 
     return new Response(JSON.stringify({
-      processed: slice.length,
+      processed: processedNow,
       inserted,
       failed,
-      total,
+      total: safeTotal,
       hasMore,
       nextOffset,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
