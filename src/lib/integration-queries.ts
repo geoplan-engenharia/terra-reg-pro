@@ -31,6 +31,9 @@ export interface IntegrationJob {
   source_label: string | null;
   features_imported: number;
   properties_linked: number;
+  total_features: number | null;
+  processed_features: number;
+  failed_features: number;
   layer_id: string | null;
   log: string | null;
   error_message: string | null;
@@ -38,6 +41,13 @@ export interface IntegrationJob {
   finished_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ImportProgress {
+  phase: "uploading" | "starting" | "processing" | "finalizing" | "done";
+  processed: number;
+  total: number;
+  failed: number;
 }
 
 const sb = supabase as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -79,23 +89,32 @@ export function useUpsertProvider() {
   });
 }
 
-export function useUploadAndIngestSicar() {
+const CHUNK_SIZE = 500;
+const CHUNK_DELAY_MS = 300;
+
+export function useUploadAndIngestSicar(
+  onProgress?: (p: ImportProgress) => void
+) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { provider: IntegrationProvider; file: File; uf: string; label?: string }) => {
+    mutationFn: async (input: {
+      provider: IntegrationProvider; file: File; uf: string; label?: string;
+    }) => {
       const { provider, file, uf, label } = input;
       const ts = Date.now();
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${provider.key}/${uf}/${ts}-${safeName}`;
 
-      // Upload
+      onProgress?.({ phase: "uploading", processed: 0, total: 0, failed: 0 });
+
+      // 1) Upload do ZIP
       const { error: upErr } = await sb.storage.from("integration-uploads").upload(path, file, {
         contentType: file.type || "application/zip",
         upsert: false,
       });
       if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
 
-      // Cria job
+      // 2) Cria registro do job
       const { data: { user } } = await sb.auth.getUser();
       const { data: job, error: jobErr } = await sb.from("integration_jobs").insert({
         provider_id: provider.id,
@@ -107,12 +126,66 @@ export function useUploadAndIngestSicar() {
       }).select().single();
       if (jobErr) throw new Error(`Falha ao criar job: ${jobErr.message}`);
 
-      // Invoca edge function
-      const { data: result, error: invErr } = await sb.functions.invoke("ingest-sicar", {
+      // 3) START: parseia, cria camada, descobre total
+      onProgress?.({ phase: "starting", processed: 0, total: 0, failed: 0 });
+      const { data: startRes, error: startErr } = await sb.functions.invoke("ingest-sicar", {
         body: { job_id: job.id },
       });
-      if (invErr) throw new Error(`Processamento falhou: ${invErr.message}`);
-      return result;
+      if (startErr) throw new Error(`Inicialização falhou: ${startErr.message}`);
+      const total: number = startRes?.total_features ?? 0;
+      if (total === 0) throw new Error("Shapefile sem feições");
+
+      // 4) Loop de chunks
+      let offset = 0;
+      let totalFailed = 0;
+      onProgress?.({ phase: "processing", processed: 0, total, failed: 0 });
+
+      while (true) {
+        // Verifica cancelamento (lê status atualizado do job)
+        const { data: cur } = await sb
+          .from("integration_jobs").select("status").eq("id", job.id).maybeSingle();
+        if (cur?.status === "cancelado") {
+          throw new Error("Importação cancelada pelo usuário");
+        }
+
+        const { data: chunkRes, error: chunkErr } = await sb.functions.invoke(
+          "process-shapefile-chunk",
+          { body: { job_id: job.id, offset, limit: CHUNK_SIZE } }
+        );
+        if (chunkErr) {
+          // Falha de um chunk inteiro: registra e tenta próximo
+          console.error("Chunk error:", chunkErr);
+          totalFailed += CHUNK_SIZE;
+          offset += CHUNK_SIZE;
+          if (offset >= total) break;
+          await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
+          continue;
+        }
+        if (chunkRes?.cancelled) {
+          throw new Error("Importação cancelada pelo usuário");
+        }
+        totalFailed += chunkRes?.failed ?? 0;
+        offset = chunkRes?.nextOffset ?? offset + CHUNK_SIZE;
+        onProgress?.({
+          phase: "processing",
+          processed: Math.min(offset, total),
+          total,
+          failed: totalFailed,
+        });
+        if (!chunkRes?.hasMore) break;
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
+      }
+
+      // 5) Finaliza: cruza com imóveis e marca sucesso
+      onProgress?.({ phase: "finalizing", processed: total, total, failed: totalFailed });
+      const { data: finRes, error: finErr } = await sb.functions.invoke(
+        "finalize-shapefile-import",
+        { body: { job_id: job.id } }
+      );
+      if (finErr) throw new Error(`Finalização falhou: ${finErr.message}`);
+
+      onProgress?.({ phase: "done", processed: total, total, failed: totalFailed });
+      return finRes;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration_jobs"] });
