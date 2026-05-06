@@ -212,6 +212,14 @@ function IntegracoesPage() {
                           {j.log && j.status === "processando" && (
                             <div className="text-info text-[10px] mt-0.5">{j.log}</div>
                           )}
+                          {j.status === "processando" && j.total_features && j.total_features > 0 && (
+                            <div className="mt-1 h-1 w-32 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full bg-info transition-all"
+                                style={{ width: `${Math.min(100, Math.round((j.processed_features / j.total_features) * 100))}%` }}
+                              />
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="inline-flex items-center gap-1">
