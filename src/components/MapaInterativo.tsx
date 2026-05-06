@@ -84,139 +84,14 @@ function geometryBounds(geom: GeoJSON.Geometry): L.LatLngBoundsExpression | null
   }
 }
 
-function LayerRenderer({
-  layer,
-  features,
-  selectedFeatureId,
-  onFeatureClick,
-}: {
-  layer: DataLayer;
-  features: DataLayerFeature[];
-  selectedFeatureId: string | null;
-  onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
-}) {
-  if (features.length === 0) return null;
-  const fc: GeoJSON.FeatureCollection = {
-    type: "FeatureCollection",
-    features: features.map((f) => ({
-      type: "Feature",
-      geometry: f.geometry_geojson,
-      properties: { ...f.properties_json, _id: f.id, _name: f.external_id, _area: f.area_ha, _src: layer.name },
-    })),
-  };
-  return (
-    <GeoJSON
-      key={layer.id + ":" + features.length + ":" + (selectedFeatureId ?? "")}
-      data={fc}
-      style={(feat) => {
-        const id = (feat?.properties as { _id?: string })?._id;
-        const isSelected = id === selectedFeatureId;
-        return {
-          color: layer.color,
-          weight: isSelected ? 3 : 1,
-          fillColor: layer.color,
-          fillOpacity: isSelected ? 0.35 : 0.2,
-        };
-      }}
-      onEachFeature={(feat, lyr) => {
-        const id = (feat.properties as { _id?: string })?._id;
-        const name = (feat.properties as { _name?: string })?._name ?? "Feição";
-        const area = (feat.properties as { _area?: number })?._area;
-        const src = (feat.properties as { _src?: string })?._src ?? "";
-        const tooltipHtml = `<div style="font-size:11px"><strong>${name}</strong><br/>${src}${area != null ? `<br/>${Number(area).toLocaleString("pt-BR")} ha` : ""}</div>`;
-        lyr.bindTooltip(tooltipHtml, { sticky: true, direction: "top", opacity: 0.95 });
-        lyr.on({
-          mouseover: (e) => {
-            const target = e.target as L.Path;
-            target.setStyle({ weight: 2, fillOpacity: 0.3 });
-          },
-          mouseout: (e) => {
-            const target = e.target as L.Path;
-            const isSelected = id === selectedFeatureId;
-            target.setStyle({ weight: isSelected ? 3 : 1, fillOpacity: isSelected ? 0.35 : 0.2 });
-          },
-          click: () => {
-            const target = features.find((x) => x.id === id);
-            if (target) onFeatureClick(target, layer);
-          },
-        });
-      }}
-    />
-  );
-}
-
-function ViewportTracker({ onChange }: { onChange: (bbox: ViewportBbox, zoom: number) => void }) {
+function ViewportZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
   const map = useMapEvents({
-    moveend: () => emit(),
-    zoomend: () => emit(),
-    load: () => emit(),
+    zoomend: () => onZoom(map.getZoom()),
+    load: () => onZoom(map.getZoom()),
   });
-  function emit() {
-    const b = map.getBounds();
-    onChange(
-      { minLng: b.getWest(), minLat: b.getSouth(), maxLng: b.getEast(), maxLat: b.getNorth() },
-      map.getZoom(),
-    );
-  }
-  // emit once on mount
-  useEffect(() => { emit(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onZoom(map.getZoom()); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
-
-function ActiveLayer({
-  layer,
-  bbox,
-  zoom,
-  selectedFeatureId,
-  onFeatureClick,
-  onLoaded,
-  onError,
-}: {
-  layer: DataLayer;
-  bbox: ViewportBbox | null;
-  zoom: number;
-  selectedFeatureId: string | null;
-  onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
-  onLoaded: (layerId: string, info: { mode: LayerRenderMode; count: number }) => void;
-  onError: (layerId: string) => void;
-}) {
-  const mode = modeForZoom(zoom);
-  // Polygons: only at high zoom and inside bbox
-  const { data: features = [], isError: polyError } = useFeaturesInBbox(
-    layer.id,
-    mode === "polygon" ? bbox : null,
-    zoom,
-  );
-  // Density centroids: cached for density+cluster modes
-  const { data: density = [], isError: densError } = useFeaturesDensity(
-    layer.id,
-    mode !== "polygon",
-  );
-
-  useEffect(() => {
-    if (mode === "polygon") onLoaded(layer.id, { mode, count: features.length });
-    else onLoaded(layer.id, { mode, count: density.length });
-  }, [layer.id, mode, features.length, density.length, onLoaded]);
-
-  useEffect(() => {
-    if (polyError || densError) onError(layer.id);
-  }, [polyError, densError, layer.id, onError]);
-
-  if (zoom < 6) return null;
-  if (mode === "density") return <HeatLayer points={density} color={layer.color} />;
-  if (mode === "cluster") return <ClusterLayer points={density} color={layer.color} />;
-  return (
-    <LayerRenderer
-      layer={layer}
-      features={features}
-      selectedFeatureId={selectedFeatureId}
-      onFeatureClick={onFeatureClick}
-    />
-  );
-}
-
-
-export function MapaInterativo() {
   const { canEditProperties } = useAuth();
   const guardTrial = useGuardTrial();
   const { data: properties = [], isLoading } = useProperties();
