@@ -325,20 +325,14 @@ export function MapaInterativo() {
     if (!activeLayerIds[layer.id]) {
       setActiveLayerIds((prev) => ({ ...prev, [layer.id]: true }));
     }
-    // Try cached features first
-    let feats = loadedFeatures[layer.id];
-    // If not loaded yet, fetch a quick sample directly to compute bbox
-    if (!feats || feats.length === 0) {
-      const { data } = await (await import("@/integrations/supabase/client")).supabase
-        .from("data_layer_features")
-        .select("geometry_geojson")
-        .eq("layer_id", layer.id)
-        .limit(1000);
-      feats = ((data ?? []) as unknown as Array<{ geometry_geojson: GeoJSON.Geometry }>).map((d) => ({
-        geometry_geojson: d.geometry_geojson,
-      } as DataLayerFeature));
-    }
-    if (!feats || feats.length === 0) return;
+    // Fetch a quick sample to compute bbox
+    const { data } = await (await import("@/integrations/supabase/client")).supabase
+      .from("data_layer_features")
+      .select("geometry_geojson")
+      .eq("layer_id", layer.id)
+      .limit(1000);
+    const feats = ((data ?? []) as unknown as Array<{ geometry_geojson: GeoJSON.Geometry }>);
+    if (feats.length === 0) return;
     try {
       const fc: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
@@ -348,7 +342,7 @@ export function MapaInterativo() {
       const b = lyr.getBounds();
       if (b.isValid()) setFlyBounds(b);
     } catch { /* ignore */ }
-  }, [activeLayerIds, loadedFeatures]);
+  }, [activeLayerIds]);
 
   const mapHostRef = useRef<HTMLDivElement | null>(null);
 
@@ -373,13 +367,13 @@ export function MapaInterativo() {
       }
       if (watchdogRef.current[id]) return;
       watchdogRef.current[id] = window.setTimeout(() => {
-        if (!loadedFeatures[id]) {
+        if (!layerStatus[id]) {
           setActiveLayerIds((prev) => ({ ...prev, [id]: false }));
           console.warn(`[MapaInterativo] Camada ${id} desativada: sem render em 10s`);
         }
       }, 10_000);
     });
-  }, [activeLayerIds, loadedFeatures]);
+  }, [activeLayerIds, layerStatus]);
   const handleLayerError = useCallback((layerId: string) => {
     setActiveLayerIds((prev) => ({ ...prev, [layerId]: false }));
   }, []);
@@ -387,7 +381,7 @@ export function MapaInterativo() {
   const resetLayers = useCallback(() => {
     try { window.localStorage.removeItem(LAYER_PREFS_KEY); } catch { /* ignore */ }
     setActiveLayerIds({});
-    setLoadedFeatures({});
+    setLayerStatus({});
   }, []);
 
 
