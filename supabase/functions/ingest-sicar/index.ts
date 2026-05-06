@@ -1,14 +1,12 @@
 // Edge function: ingest-sicar (START)
-// Etapa de inicialização do job de importação:
-//   1. Baixa o ZIP do storage
-//   2. Parseia o shapefile (apenas para descobrir o total de feições)
-//   3. Cria/atualiza data_layers e data_sources
-//   4. Limpa feições antigas da camada
-//   5. Atualiza o job com total_features e status='processando'
-// O frontend então chama `process-shapefile-chunk` em loop até terminar.
+// Starter leve do job de importação:
+//   1. Busca o job e provider
+//   2. Cria/atualiza data_layers e data_sources
+//   3. Limpa feições antigas da camada
+//   4. Atualiza o job com total_features=null e status='processando'
+// O download/parse do shapefile acontece apenas em `process-shapefile-chunk`.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import shp from "https://esm.sh/shpjs@4.0.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,31 +55,6 @@ Deno.serve(async (req) => {
     if (!provider) throw new Error("Provider não encontrado");
     if (!job.storage_path) throw new Error("Job sem storage_path");
 
-    await admin.from("integration_jobs").update({
-      status: "processando",
-      started_at: new Date().toISOString(),
-      log: "Baixando arquivo e contando feições...",
-      processed_features: 0,
-      failed_features: 0,
-    }).eq("id", job.id);
-
-    // Download + parse (apenas para descobrir total e criar a camada)
-    const { data: fileBlob, error: dlErr } = await admin.storage
-      .from("integration-uploads").download(job.storage_path);
-    if (dlErr || !fileBlob) throw new Error(`Falha no download: ${dlErr?.message}`);
-
-    const buffer = await fileBlob.arrayBuffer();
-    let parsed: any;
-    try {
-      parsed = await shp(buffer);
-    } catch (e) {
-      throw new Error(`Falha ao parsear shapefile: ${(e as Error).message}`);
-    }
-    const collections = Array.isArray(parsed) ? parsed : [parsed];
-    let total = 0;
-    for (const fc of collections) total += fc?.features?.length ?? 0;
-    if (total === 0) throw new Error("Nenhuma feature encontrada no shapefile");
-
     const layerKey = provider.data_source_key ?? `sicar-${job.uf?.toLowerCase() ?? "br"}`;
     const layerName = `SICAR — ${job.uf ?? "Federal"}${job.source_label ? ` (${job.source_label})` : ""}`;
 
@@ -112,15 +85,19 @@ Deno.serve(async (req) => {
     await admin.from("data_layer_features").delete().eq("layer_id", layer.id);
 
     await admin.from("integration_jobs").update({
-      total_features: total,
+      status: "processando",
+      started_at: new Date().toISOString(),
+      total_features: null,
+      processed_features: 0,
+      failed_features: 0,
       layer_id: layer.id,
-      log: `Pronto para processar ${total.toLocaleString("pt-BR")} feições em lotes.`,
+      log: "Importação iniciada. O total de feições será identificado no primeiro lote.",
     }).eq("id", job.id);
 
-    console.log(`[ingest-sicar] start ok: job=${job.id} layer=${layer.id} total=${total}`);
+    console.log(`[ingest-sicar] start ok: job=${job.id} layer=${layer.id}`);
 
     return new Response(JSON.stringify({
-      ok: true, job_id: job.id, layer_id: layer.id, total_features: total,
+      ok: true, job_id: job.id, layer_id: layer.id, total_features: null,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
