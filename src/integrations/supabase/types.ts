@@ -460,6 +460,7 @@ export type Database = {
           failed_features: number
           features_imported: number
           finished_at: string | null
+          geojson_path: string | null
           id: string
           layer_id: string | null
           log: string | null
@@ -482,6 +483,7 @@ export type Database = {
           failed_features?: number
           features_imported?: number
           finished_at?: string | null
+          geojson_path?: string | null
           id?: string
           layer_id?: string | null
           log?: string | null
@@ -504,6 +506,7 @@ export type Database = {
           failed_features?: number
           features_imported?: number
           finished_at?: string | null
+          geojson_path?: string | null
           id?: string
           layer_id?: string | null
           log?: string | null
