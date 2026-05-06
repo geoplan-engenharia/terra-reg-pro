@@ -124,6 +124,25 @@ export function useFeaturesInBbox(
   });
 }
 
+export interface FeatureDensityPoint { id: string; lng: number; lat: number }
+export function useFeaturesDensity(layerId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ["layer_features_density", layerId],
+    enabled: !!layerId && enabled,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<FeatureDensityPoint[]> => {
+      const { data, error } = await sb.rpc("get_features_density", {
+        _layer_id: layerId,
+        _limit: 50000,
+      });
+      if (error) throw error;
+      return ((data ?? []) as Array<{ id: string; lng: number | string; lat: number | string }>).map(
+        (d) => ({ id: d.id, lng: Number(d.lng), lat: Number(d.lat) }),
+      );
+    },
+  });
+}
+
 export function useSyncDataLayer() {
   const qc = useQueryClient();
   return useMutation({

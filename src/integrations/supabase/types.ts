@@ -1395,6 +1395,14 @@ export type Database = {
       }
       current_org_id: { Args: never; Returns: string }
       geojson_bbox: { Args: { geom: Json }; Returns: number[] }
+      get_features_density: {
+        Args: { _layer_id: string; _limit?: number }
+        Returns: {
+          id: string
+          lat: number
+          lng: number
+        }[]
+      }
       get_features_in_bbox: {
         Args: {
           _layer_id: string

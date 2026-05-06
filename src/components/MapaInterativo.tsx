@@ -14,8 +14,16 @@ import { useAuth } from "@/lib/auth";
 import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
-import { useDataLayers, useFeaturesInBbox, type DataLayer, type DataLayerFeature, type ViewportBbox } from "@/lib/layer-queries";
+import { useDataLayers, useFeaturesInBbox, useFeaturesDensity, type DataLayer, type DataLayerFeature, type ViewportBbox } from "@/lib/layer-queries";
 import { useMapEvents } from "react-leaflet";
+import { HeatLayer, ClusterLayer } from "./LayerRenderingModes";
+
+export type LayerRenderMode = "density" | "cluster" | "polygon";
+export function modeForZoom(z: number): LayerRenderMode {
+  if (z < 8) return "density";
+  if (z < 12) return "cluster";
+  return "polygon";
+}
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
@@ -177,13 +185,34 @@ function ActiveLayer({
   zoom: number;
   selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
-  onLoaded: (layerId: string, features: DataLayerFeature[]) => void;
+  onLoaded: (layerId: string, info: { mode: LayerRenderMode; count: number }) => void;
   onError: (layerId: string) => void;
 }) {
-  const { data: features = [], isError } = useFeaturesInBbox(layer.id, bbox, zoom);
-  useEffect(() => { onLoaded(layer.id, features); }, [layer.id, features, onLoaded]);
-  useEffect(() => { if (isError) onError(layer.id); }, [isError, layer.id, onError]);
+  const mode = modeForZoom(zoom);
+  // Polygons: only at high zoom and inside bbox
+  const { data: features = [], isError: polyError } = useFeaturesInBbox(
+    layer.id,
+    mode === "polygon" ? bbox : null,
+    zoom,
+  );
+  // Density centroids: cached for density+cluster modes
+  const { data: density = [], isError: densError } = useFeaturesDensity(
+    layer.id,
+    mode !== "polygon",
+  );
+
+  useEffect(() => {
+    if (mode === "polygon") onLoaded(layer.id, { mode, count: features.length });
+    else onLoaded(layer.id, { mode, count: density.length });
+  }, [layer.id, mode, features.length, density.length, onLoaded]);
+
+  useEffect(() => {
+    if (polyError || densError) onError(layer.id);
+  }, [polyError, densError, layer.id, onError]);
+
   if (zoom < 6) return null;
+  if (mode === "density") return <HeatLayer points={density} color={layer.color} />;
+  if (mode === "cluster") return <ClusterLayer points={density} color={layer.color} />;
   return (
     <LayerRenderer
       layer={layer}
@@ -281,40 +310,29 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
-  // Tracks loaded features per layer (for debug counts and "zoom to layer")
-  const [loadedFeatures, setLoadedFeatures] = useState<Record<string, DataLayerFeature[]>>({});
-  const handleLayerLoaded = useCallback((layerId: string, features: DataLayerFeature[]) => {
-    setLoadedFeatures((prev) => {
-      if (prev[layerId]?.length === features.length) return prev;
-      return { ...prev, [layerId]: features };
+  // Tracks render mode + count per active layer
+  const [layerStatus, setLayerStatus] = useState<Record<string, { mode: LayerRenderMode; count: number }>>({});
+  const handleLayerLoaded = useCallback((layerId: string, info: { mode: LayerRenderMode; count: number }) => {
+    setLayerStatus((prev) => {
+      const cur = prev[layerId];
+      if (cur && cur.mode === info.mode && cur.count === info.count) return prev;
+      return { ...prev, [layerId]: info };
     });
   }, []);
-
-  const loadedCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    Object.entries(loadedFeatures).forEach(([k, v]) => { counts[k] = v.length; });
-    return counts;
-  }, [loadedFeatures]);
 
   const zoomToLayer = useCallback(async (layer: DataLayer) => {
     // Activate if not already active so its features start loading
     if (!activeLayerIds[layer.id]) {
       setActiveLayerIds((prev) => ({ ...prev, [layer.id]: true }));
     }
-    // Try cached features first
-    let feats = loadedFeatures[layer.id];
-    // If not loaded yet, fetch a quick sample directly to compute bbox
-    if (!feats || feats.length === 0) {
-      const { data } = await (await import("@/integrations/supabase/client")).supabase
-        .from("data_layer_features")
-        .select("geometry_geojson")
-        .eq("layer_id", layer.id)
-        .limit(1000);
-      feats = ((data ?? []) as unknown as Array<{ geometry_geojson: GeoJSON.Geometry }>).map((d) => ({
-        geometry_geojson: d.geometry_geojson,
-      } as DataLayerFeature));
-    }
-    if (!feats || feats.length === 0) return;
+    // Fetch a quick sample to compute bbox
+    const { data } = await (await import("@/integrations/supabase/client")).supabase
+      .from("data_layer_features")
+      .select("geometry_geojson")
+      .eq("layer_id", layer.id)
+      .limit(1000);
+    const feats = ((data ?? []) as unknown as Array<{ geometry_geojson: GeoJSON.Geometry }>);
+    if (feats.length === 0) return;
     try {
       const fc: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
@@ -324,7 +342,7 @@ export function MapaInterativo() {
       const b = lyr.getBounds();
       if (b.isValid()) setFlyBounds(b);
     } catch { /* ignore */ }
-  }, [activeLayerIds, loadedFeatures]);
+  }, [activeLayerIds]);
 
   const mapHostRef = useRef<HTMLDivElement | null>(null);
 
@@ -349,13 +367,13 @@ export function MapaInterativo() {
       }
       if (watchdogRef.current[id]) return;
       watchdogRef.current[id] = window.setTimeout(() => {
-        if (!loadedFeatures[id]) {
+        if (!layerStatus[id]) {
           setActiveLayerIds((prev) => ({ ...prev, [id]: false }));
           console.warn(`[MapaInterativo] Camada ${id} desativada: sem render em 10s`);
         }
       }, 10_000);
     });
-  }, [activeLayerIds, loadedFeatures]);
+  }, [activeLayerIds, layerStatus]);
   const handleLayerError = useCallback((layerId: string) => {
     setActiveLayerIds((prev) => ({ ...prev, [layerId]: false }));
   }, []);
@@ -363,7 +381,7 @@ export function MapaInterativo() {
   const resetLayers = useCallback(() => {
     try { window.localStorage.removeItem(LAYER_PREFS_KEY); } catch { /* ignore */ }
     setActiveLayerIds({});
-    setLoadedFeatures({});
+    setLayerStatus({});
   }, []);
 
 
@@ -489,7 +507,7 @@ export function MapaInterativo() {
         <LayerControl
           layers={visibleLayers}
           activeIds={activeLayerIds}
-          loadedCounts={loadedCounts}
+          layerStatus={layerStatus}
           onToggle={toggleLayer}
           onZoom={zoomToLayer}
           onActivateAll={activateAll}

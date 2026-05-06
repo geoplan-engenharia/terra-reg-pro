@@ -17,12 +17,21 @@ export function MapLegend({
   zoom?: number;
 }) {
   if (activeLayers.length === 0) return null;
-  const hasLargeLayer = activeLayers.some((l) => (l.features_count ?? 0) > 5000);
   const tooFarOut = zoom != null && zoom < 6;
+  const phase: "density" | "cluster" | "polygon" | null =
+    zoom == null ? null : zoom < 8 ? "density" : zoom < 12 ? "cluster" : "polygon";
+  const phaseLabel =
+    phase === "density"
+      ? "Densidade de imóveis"
+      : phase === "cluster"
+        ? "Clusters"
+        : phase === "polygon"
+          ? "Polígonos"
+          : "";
   return (
     <div className="absolute bottom-4 right-4 z-[999] rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 max-w-xs">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-        Legenda
+        Legenda {phaseLabel && `· ${phaseLabel}`}
       </div>
       <ul className="space-y-1.5">
         {activeLayers.map((l) => (
@@ -44,9 +53,14 @@ export function MapLegend({
           Aproxime o zoom para ver as feições do CAR.
         </div>
       )}
-      {!tooFarOut && hasLargeLayer && (
+      {!tooFarOut && phase === "density" && (
         <div className="mt-2 pt-2 border-t border-border text-[10px] text-muted-foreground">
-          Camada grande — feições carregadas conforme você navega.
+          Heatmap mostrando concentração. Aproxime para ver clusters e polígonos.
+        </div>
+      )}
+      {phase === "cluster" && (
+        <div className="mt-2 pt-2 border-t border-border text-[10px] text-muted-foreground">
+          Clusters numerados. Clique para aproximar.
         </div>
       )}
     </div>

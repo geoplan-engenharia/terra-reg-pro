@@ -1,10 +1,17 @@
 import { Layers, Eye, EyeOff, Crosshair, RotateCcw } from "lucide-react";
 import type { DataLayer } from "@/lib/layer-queries";
 
+type LayerRenderMode = "density" | "cluster" | "polygon";
+const MODE_LABEL: Record<LayerRenderMode, string> = {
+  density: "Densidade",
+  cluster: "Clusters",
+  polygon: "Polígonos",
+};
+
 export function LayerControl({
   layers,
   activeIds,
-  loadedCounts,
+  layerStatus,
   onToggle,
   onZoom,
   onActivateAll,
@@ -13,7 +20,7 @@ export function LayerControl({
 }: {
   layers: DataLayer[];
   activeIds: Record<string, boolean>;
-  loadedCounts?: Record<string, number>;
+  layerStatus?: Record<string, { mode: LayerRenderMode; count: number }>;
   onToggle: (id: string) => void;
   onZoom: (layer: DataLayer) => void;
   onActivateAll: () => void;
@@ -70,7 +77,7 @@ export function LayerControl({
         )}
         {layers.map((c) => {
           const active = !!activeIds[c.id];
-          const loaded = loadedCounts?.[c.id];
+          const status = layerStatus?.[c.id];
           const total = c.features_count ?? 0;
           const isLarge = total > 5000;
           return (
@@ -101,8 +108,15 @@ export function LayerControl({
                   </div>
                   <div className="text-[10px] text-muted-foreground capitalize">
                     {c.layer_type.replace("_", " ")} · {total.toLocaleString("pt-BR")} feições
-                    {active && loaded != null ? ` · ${loaded.toLocaleString("pt-BR")} no mapa` : ""}
                   </div>
+                  {active && status && (
+                    <div className="text-[10px] text-primary/90 font-medium mt-0.5">
+                      Modo: {MODE_LABEL[status.mode]}
+                      {status.mode === "polygon"
+                        ? ` (${status.count.toLocaleString("pt-BR")} visíveis)`
+                        : ""}
+                    </div>
+                  )}
                 </div>
                 {active ? (
                   <Eye className="h-3.5 w-3.5 text-primary" />
