@@ -90,58 +90,6 @@ export function useLayerFeatures(layerId: string | null) {
   });
 }
 
-// Busca feições da camada que intersectam o bbox visível atual.
-// O backend limita a 500 (zoom<8, amostradas), 2000 (intermediário) ou 5000 (zoom>12).
-export interface ViewportBbox {
-  minLng: number; minLat: number; maxLng: number; maxLat: number;
-}
-export function useFeaturesInBbox(
-  layerId: string | null,
-  bbox: ViewportBbox | null,
-  zoom: number,
-) {
-  // arredondamos o bbox para reduzir refetches em micro-movimentos
-  const r = (n: number) => Math.round(n * 100) / 100;
-  const key = bbox
-    ? `${r(bbox.minLng)},${r(bbox.minLat)},${r(bbox.maxLng)},${r(bbox.maxLat)}`
-    : null;
-  return useQuery({
-    queryKey: ["layer_features_bbox", layerId, key, zoom < 6 ? "off" : zoom < 8 ? "low" : zoom > 12 ? "high" : "mid"],
-    enabled: !!layerId && !!bbox && zoom >= 6,
-    staleTime: 30_000,
-    queryFn: async (): Promise<DataLayerFeature[]> => {
-      const { data, error } = await sb.rpc("get_features_in_bbox", {
-        _layer_id: layerId,
-        _min_lng: bbox!.minLng,
-        _min_lat: bbox!.minLat,
-        _max_lng: bbox!.maxLng,
-        _max_lat: bbox!.maxLat,
-        _zoom: Math.round(zoom),
-      });
-      if (error) throw error;
-      return (data ?? []) as DataLayerFeature[];
-    },
-  });
-}
-
-export interface FeatureDensityPoint { id: string; lng: number; lat: number }
-export function useFeaturesDensity(layerId: string | null, enabled: boolean) {
-  return useQuery({
-    queryKey: ["layer_features_density", layerId],
-    enabled: !!layerId && enabled,
-    staleTime: 5 * 60_000,
-    queryFn: async (): Promise<FeatureDensityPoint[]> => {
-      const { data, error } = await sb.rpc("get_features_density", {
-        _layer_id: layerId,
-        _limit: 50000,
-      });
-      if (error) throw error;
-      return ((data ?? []) as Array<{ id: string; lng: number | string; lat: number | string }>).map(
-        (d) => ({ id: d.id, lng: Number(d.lng), lat: Number(d.lat) }),
-      );
-    },
-  });
-}
 
 export function useSyncDataLayer() {
   const qc = useQueryClient();
