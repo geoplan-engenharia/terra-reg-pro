@@ -133,6 +133,7 @@ function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => voi
                     <select className="mt-1 w-full bg-background border border-border rounded-md h-9 px-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
                       <option value="trial">Trial</option>
                       <option value="ativo">Ativo</option>
+                      <option value="vitalicio">Vitalício (sem expiração)</option>
                       <option value="pausado">Pausado</option>
                       <option value="cancelado">Cancelado</option>
                       <option value="expirado">Expirado</option>
@@ -140,7 +141,17 @@ function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => voi
                   </label>
                   <label className="text-xs">
                     <span className="text-muted-foreground">Validade</span>
-                    <input type="date" className="mt-1 w-full bg-background border border-border rounded-md h-9 px-2 text-sm" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+                    <input
+                      type="date"
+                      disabled={isLifetime}
+                      className="mt-1 w-full bg-background border border-border rounded-md h-9 px-2 text-sm disabled:opacity-50"
+                      value={isLifetime ? "" : expiresAt}
+                      onChange={(e) => setExpiresAt(e.target.value)}
+                      placeholder={isLifetime ? "Sem expiração" : ""}
+                    />
+                    {isLifetime && (
+                      <span className="mt-1 block text-[10px] text-primary">Acesso vitalício — sem data de expiração.</span>
+                    )}
                   </label>
                 </div>
                 <Button onClick={save} disabled={update.isPending} className="w-full">
