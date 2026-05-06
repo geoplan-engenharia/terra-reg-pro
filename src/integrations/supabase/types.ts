@@ -112,6 +112,10 @@ export type Database = {
       data_layer_features: {
         Row: {
           area_ha: number | null
+          bbox_max_lat: number | null
+          bbox_max_lng: number | null
+          bbox_min_lat: number | null
+          bbox_min_lng: number | null
           created_at: string
           data_source_key: string
           external_id: string | null
@@ -125,6 +129,10 @@ export type Database = {
         }
         Insert: {
           area_ha?: number | null
+          bbox_max_lat?: number | null
+          bbox_max_lng?: number | null
+          bbox_min_lat?: number | null
+          bbox_min_lng?: number | null
           created_at?: string
           data_source_key: string
           external_id?: string | null
@@ -138,6 +146,10 @@ export type Database = {
         }
         Update: {
           area_ha?: number | null
+          bbox_max_lat?: number | null
+          bbox_max_lng?: number | null
+          bbox_min_lat?: number | null
+          bbox_min_lng?: number | null
           created_at?: string
           data_source_key?: string
           external_id?: string | null
@@ -1346,6 +1358,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _coords_minmax: {
+        Args: { mn: number[]; mx: number[]; node: Json }
+        Returns: Record<string, unknown>
+      }
       admin_organization_details: { Args: { _org_id: string }; Returns: Json }
       admin_organizations_overview: {
         Args: never
@@ -1378,6 +1394,40 @@ export type Database = {
         }[]
       }
       current_org_id: { Args: never; Returns: string }
+      geojson_bbox: { Args: { geom: Json }; Returns: number[] }
+      get_features_in_bbox: {
+        Args: {
+          _layer_id: string
+          _max_lat: number
+          _max_lng: number
+          _min_lat: number
+          _min_lng: number
+          _zoom: number
+        }
+        Returns: {
+          area_ha: number | null
+          bbox_max_lat: number | null
+          bbox_max_lng: number | null
+          bbox_min_lat: number | null
+          bbox_min_lng: number | null
+          created_at: string
+          data_source_key: string
+          external_id: string | null
+          geometry_geojson: Json
+          id: string
+          layer_id: string
+          municipality: string | null
+          properties_json: Json
+          source_updated_at: string | null
+          uf: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "data_layer_features"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
