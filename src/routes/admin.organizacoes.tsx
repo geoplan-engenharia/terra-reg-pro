@@ -53,16 +53,18 @@ function OrgDetailsPanel({ orgId, onClose }: { orgId: string; onClose: () => voi
     setExpiresAt(data.subscription.expires_at ? data.subscription.expires_at.slice(0, 10) : "");
   }
 
+  const isLifetime = status === "vitalicio";
+
   const save = async () => {
     try {
       await update.mutateAsync({
         organization_id: orgId,
         plan_key: planKey || undefined,
         billing_cycle: (billingCycle as "mensal" | "anual") || undefined,
-        status: (status as "ativo" | "trial" | "pausado" | "cancelado" | "expirado") || undefined,
-        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        status: (status as "ativo" | "trial" | "pausado" | "cancelado" | "expirado" | "vitalicio") || undefined,
+        expires_at: isLifetime ? null : (expiresAt ? new Date(expiresAt).toISOString() : null),
       });
-      toast.success("Assinatura atualizada");
+      toast.success(isLifetime ? "Acesso vitalício concedido" : "Assinatura atualizada");
     } catch (e) {
       toast.error("Falha ao atualizar", { description: (e as Error).message });
     }
