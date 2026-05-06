@@ -99,14 +99,7 @@ export function LayerControl({
                   <div className="text-[10px] text-muted-foreground capitalize">
                     {c.layer_type.replace("_", " ")} · {total.toLocaleString("pt-BR")} feições
                   </div>
-                  {active && status && (
-                    <div className="text-[10px] text-primary/90 font-medium mt-0.5">
-                      Modo: {MODE_LABEL[status.mode]}
-                      {status.mode === "polygon"
-                        ? ` (${status.count.toLocaleString("pt-BR")} visíveis)`
-                        : ""}
-                    </div>
-                  )}
+                </div>
                 </div>
                 {active ? (
                   <Eye className="h-3.5 w-3.5 text-primary" />
