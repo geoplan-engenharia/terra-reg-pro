@@ -268,7 +268,7 @@ function IntegracoesPage() {
           progress={progress}
           onSubmit={async (file, uf, label) => {
             try {
-              setProgress({ phase: "uploading", processed: 0, total: 0, failed: 0 });
+              setProgress({ phase: "parsing", processed: 0, total: 0, failed: 0 });
               const result = await ingest.mutateAsync({ provider: selectedProvider, file, uf, label });
               const failed = result?.failed ?? 0;
               if (failed > 0) {
