@@ -33,6 +33,7 @@ import { Route as AdminFontesDadosRouteImport } from './routes/admin.fontes-dado
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminBugsRouteImport } from './routes/admin.bugs'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
+import { Route as ApiPublicVectorTileRouteImport } from './routes/api/public/vector-tile'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -154,6 +155,11 @@ const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
   path: '/accept-invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVectorTileRoute = ApiPublicVectorTileRouteImport.update({
+  id: '/api/public/vector-tile',
+  path: '/api/public/vector-tile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/vector-tile': typeof ApiPublicVectorTileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/vector-tile': typeof ApiPublicVectorTileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/vector-tile': typeof ApiPublicVectorTileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/usuarios'
     | '/admin/'
+    | '/api/public/vector-tile'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/usuarios'
     | '/admin'
+    | '/api/public/vector-tile'
   id:
     | '__root__'
     | '/'
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/usuarios'
     | '/admin/'
+    | '/api/public/vector-tile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -330,6 +342,7 @@ export interface RootRouteChildren {
   RegrasDiagnosticoRoute: typeof RegrasDiagnosticoRoute
   SignupRoute: typeof SignupRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
+  ApiPublicVectorTileRoute: typeof ApiPublicVectorTileRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -502,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AcceptInviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/vector-tile': {
+      id: '/api/public/vector-tile'
+      path: '/api/public/vector-tile'
+      fullPath: '/api/public/vector-tile'
+      preLoaderRoute: typeof ApiPublicVectorTileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -546,7 +566,17 @@ const rootRouteChildren: RootRouteChildren = {
   RegrasDiagnosticoRoute: RegrasDiagnosticoRoute,
   SignupRoute: SignupRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
+  ApiPublicVectorTileRoute: ApiPublicVectorTileRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
