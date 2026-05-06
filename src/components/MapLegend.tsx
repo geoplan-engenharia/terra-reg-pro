@@ -17,21 +17,11 @@ export function MapLegend({
   zoom?: number;
 }) {
   if (activeLayers.length === 0) return null;
-  const tooFarOut = zoom != null && zoom < 6;
-  const phase: "density" | "cluster" | "polygon" | null =
-    zoom == null ? null : zoom < 8 ? "density" : zoom < 12 ? "cluster" : "polygon";
-  const phaseLabel =
-    phase === "density"
-      ? "Densidade de imóveis"
-      : phase === "cluster"
-        ? "Clusters"
-        : phase === "polygon"
-          ? "Polígonos"
-          : "";
+  const tooFarOut = zoom != null && zoom < 5;
   return (
     <div className="absolute bottom-4 right-4 z-[999] rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 max-w-xs">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-        Legenda {phaseLabel && `· ${phaseLabel}`}
+        Legenda
       </div>
       <ul className="space-y-1.5">
         {activeLayers.map((l) => (
@@ -49,18 +39,8 @@ export function MapLegend({
         ))}
       </ul>
       {tooFarOut && (
-        <div className="mt-2 pt-2 border-t border-border text-[10px] text-amber-500">
-          Aproxime o zoom para ver as feições do CAR.
-        </div>
-      )}
-      {!tooFarOut && phase === "density" && (
         <div className="mt-2 pt-2 border-t border-border text-[10px] text-muted-foreground">
-          Heatmap mostrando concentração. Aproxime para ver clusters e polígonos.
-        </div>
-      )}
-      {phase === "cluster" && (
-        <div className="mt-2 pt-2 border-t border-border text-[10px] text-muted-foreground">
-          Clusters numerados. Clique para aproximar.
+          Aproxime o zoom para ver mais detalhes.
         </div>
       )}
     </div>
