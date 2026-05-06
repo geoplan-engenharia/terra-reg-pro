@@ -102,7 +102,9 @@ Deno.serve(async (req) => {
     }
 
     const slice = allFeatures.slice(safeOffset, safeOffset + safeLimit);
-    const layerKey = job.storage_path.split("/")[0]; // provider.key
+    const { data: layerRow } = await admin
+      .from("data_layers").select("data_source_key").eq("id", job.layer_id).maybeSingle();
+    const layerKey = layerRow?.data_source_key ?? job.storage_path.split("/")[0];
 
     // Constrói rows do lote
     const rows: any[] = [];
