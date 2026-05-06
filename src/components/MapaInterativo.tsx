@@ -92,6 +92,8 @@ function ViewportZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
   useEffect(() => { onZoom(map.getZoom()); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
+
+export function MapaInterativo() {
   const { canEditProperties } = useAuth();
   const guardTrial = useGuardTrial();
   const { data: properties = [], isLoading } = useProperties();
