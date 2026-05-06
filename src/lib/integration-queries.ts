@@ -131,7 +131,7 @@ export function useUploadAndIngestSicar(
         triggered_by: user?.id ?? null,
         status: "pendente",
         uf: uf.toUpperCase(),
-        source_label: label ?? null,
+        source_label: label ?? file.name,
       }).select().single();
       if (jobErr) throw new Error(`Falha ao criar job: ${jobErr.message}`);
 
@@ -166,7 +166,7 @@ export function useUploadAndIngestSicar(
       await sb.from("integration_jobs").update({
         status: "processando",
         started_at: new Date().toISOString(),
-        storage_path: file.name,
+        storage_path: null,
         geojson_path: null,
         total_features: total,
         processed_features: 0,
