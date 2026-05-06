@@ -457,18 +457,21 @@ export type Database = {
         Row: {
           created_at: string
           error_message: string | null
+          failed_features: number
           features_imported: number
           finished_at: string | null
           id: string
           layer_id: string | null
           log: string | null
           organization_id: string | null
+          processed_features: number
           properties_linked: number
           provider_id: string
           source_label: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["integration_job_status"]
           storage_path: string | null
+          total_features: number | null
           triggered_by: string | null
           uf: string | null
           updated_at: string
@@ -476,18 +479,21 @@ export type Database = {
         Insert: {
           created_at?: string
           error_message?: string | null
+          failed_features?: number
           features_imported?: number
           finished_at?: string | null
           id?: string
           layer_id?: string | null
           log?: string | null
           organization_id?: string | null
+          processed_features?: number
           properties_linked?: number
           provider_id: string
           source_label?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["integration_job_status"]
           storage_path?: string | null
+          total_features?: number | null
           triggered_by?: string | null
           uf?: string | null
           updated_at?: string
@@ -495,18 +501,21 @@ export type Database = {
         Update: {
           created_at?: string
           error_message?: string | null
+          failed_features?: number
           features_imported?: number
           finished_at?: string | null
           id?: string
           layer_id?: string | null
           log?: string | null
           organization_id?: string | null
+          processed_features?: number
           properties_linked?: number
           provider_id?: string
           source_label?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["integration_job_status"]
           storage_path?: string | null
+          total_features?: number | null
           triggered_by?: string | null
           uf?: string | null
           updated_at?: string
