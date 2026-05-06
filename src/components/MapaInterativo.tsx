@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
-import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
+import { useDataLayers, useFeaturesInBbox, type DataLayer, type DataLayerFeature, type ViewportBbox } from "@/lib/layer-queries";
+import { useMapEvents } from "react-leaflet";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
