@@ -179,18 +179,7 @@ export function MapaInterativo() {
   };
   const clearAll = () => setActiveLayerIds({});
 
-  // Tracks render mode + count per active layer
-  const [layerStatus, setLayerStatus] = useState<Record<string, { mode: LayerRenderMode; count: number }>>({});
-  const handleLayerLoaded = useCallback((layerId: string, info: { mode: LayerRenderMode; count: number }) => {
-    setLayerStatus((prev) => {
-      const cur = prev[layerId];
-      if (cur && cur.mode === info.mode && cur.count === info.count) return prev;
-      return { ...prev, [layerId]: info };
-    });
-  }, []);
-
   const zoomToLayer = useCallback(async (layer: DataLayer) => {
-    // Activate if not already active so its features start loading
     if (!activeLayerIds[layer.id]) {
       setActiveLayerIds((prev) => ({ ...prev, [layer.id]: true }));
     }
@@ -215,43 +204,14 @@ export function MapaInterativo() {
 
   const mapHostRef = useRef<HTMLDivElement | null>(null);
 
-  // Viewport (bbox + zoom) atualizado via moveend/zoomend
-  const [viewport, setViewport] = useState<ViewportBbox | null>(null);
+  // Zoom is tracked only for the legend hints
   const [zoomLevel, setZoomLevel] = useState<number>(4);
-  const handleViewport = useCallback((b: ViewportBbox, z: number) => {
-    setViewport(b);
-    setZoomLevel(z);
-  }, []);
-
-  // Anti-loop: se uma camada ativa não renderizar em 10s, desativa.
-  const watchdogRef = useRef<Record<string, number>>({});
-  useEffect(() => {
-    Object.keys(activeLayerIds).forEach((id) => {
-      if (!activeLayerIds[id]) {
-        if (watchdogRef.current[id]) {
-          window.clearTimeout(watchdogRef.current[id]);
-          delete watchdogRef.current[id];
-        }
-        return;
-      }
-      if (watchdogRef.current[id]) return;
-      watchdogRef.current[id] = window.setTimeout(() => {
-        if (!layerStatus[id]) {
-          setActiveLayerIds((prev) => ({ ...prev, [id]: false }));
-          console.warn(`[MapaInterativo] Camada ${id} desativada: sem render em 10s`);
-        }
-      }, 10_000);
-    });
-  }, [activeLayerIds, layerStatus]);
-  const handleLayerError = useCallback((layerId: string) => {
-    setActiveLayerIds((prev) => ({ ...prev, [layerId]: false }));
-  }, []);
 
   const resetLayers = useCallback(() => {
     try { window.localStorage.removeItem(LAYER_PREFS_KEY); } catch { /* ignore */ }
     setActiveLayerIds({});
-    setLayerStatus({});
   }, []);
+
 
 
   return (
