@@ -77,7 +77,7 @@ export function LayerControl({
         )}
         {layers.map((c) => {
           const active = !!activeIds[c.id];
-          const loaded = loadedCounts?.[c.id];
+          const status = layerStatus?.[c.id];
           const total = c.features_count ?? 0;
           const isLarge = total > 5000;
           return (
