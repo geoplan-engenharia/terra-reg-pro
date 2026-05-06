@@ -46,7 +46,7 @@ export interface IntegrationJob {
 }
 
 export interface ImportProgress {
-  phase: "uploading" | "starting" | "processing" | "finalizing" | "done";
+  phase: "parsing" | "uploading" | "starting" | "processing" | "finalizing" | "done";
   processed: number;
   total: number;
   failed: number;
