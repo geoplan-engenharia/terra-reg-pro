@@ -1,4 +1,4 @@
-import { Layers, Eye, EyeOff, Crosshair } from "lucide-react";
+import { Layers, Eye, EyeOff, Crosshair, RotateCcw } from "lucide-react";
 import type { DataLayer } from "@/lib/layer-queries";
 
 export function LayerControl({
@@ -9,6 +9,7 @@ export function LayerControl({
   onZoom,
   onActivateAll,
   onClearAll,
+  onReset,
 }: {
   layers: DataLayer[];
   activeIds: Record<string, boolean>;
@@ -17,6 +18,7 @@ export function LayerControl({
   onZoom: (layer: DataLayer) => void;
   onActivateAll: () => void;
   onClearAll: () => void;
+  onReset?: () => void;
 }) {
   const activeCount = layers.filter((l) => activeIds[l.id]).length;
 
@@ -29,6 +31,16 @@ export function LayerControl({
             Camadas ({activeCount}/{layers.length})
           </span>
         </div>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            title="Resetar estado das camadas (limpa cache local)"
+            className="p-1 rounded-md hover:bg-accent/30 text-muted-foreground hover:text-foreground transition"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {layers.length > 0 && (
@@ -59,6 +71,8 @@ export function LayerControl({
         {layers.map((c) => {
           const active = !!activeIds[c.id];
           const loaded = loadedCounts?.[c.id];
+          const total = c.features_count ?? 0;
+          const isLarge = total > 5000;
           return (
             <div
               key={c.id}
@@ -77,10 +91,17 @@ export function LayerControl({
                   style={{ background: c.color, opacity: active ? 1 : 0.4 }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium leading-tight truncate">{c.name}</div>
+                  <div className="text-xs font-medium leading-tight truncate">
+                    {c.name}
+                    {isLarge && (
+                      <span className="ml-1.5 inline-block text-[9px] uppercase tracking-wider text-amber-500 font-semibold">
+                        grande
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[10px] text-muted-foreground capitalize">
-                    {c.layer_type.replace("_", " ")} · {c.features_count ?? 0} feições
-                    {active && loaded != null ? ` · ${loaded} no mapa` : ""}
+                    {c.layer_type.replace("_", " ")} · {total.toLocaleString("pt-BR")} feições
+                    {active && loaded != null ? ` · ${loaded.toLocaleString("pt-BR")} no mapa` : ""}
                   </div>
                 </div>
                 {active ? (

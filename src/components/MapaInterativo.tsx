@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { ChevronRight, Search, Loader2, Plus, Layers as LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGuardTrial } from "./TrialGuard";
-import { useDataLayers, useLayerFeatures, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
+import { useDataLayers, useFeaturesInBbox, type DataLayer, type DataLayerFeature, type ViewportBbox } from "@/lib/layer-queries";
+import { useMapEvents } from "react-leaflet";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
@@ -144,21 +145,45 @@ function LayerRenderer({
   );
 }
 
+function ViewportTracker({ onChange }: { onChange: (bbox: ViewportBbox, zoom: number) => void }) {
+  const map = useMapEvents({
+    moveend: () => emit(),
+    zoomend: () => emit(),
+    load: () => emit(),
+  });
+  function emit() {
+    const b = map.getBounds();
+    onChange(
+      { minLng: b.getWest(), minLat: b.getSouth(), maxLng: b.getEast(), maxLat: b.getNorth() },
+      map.getZoom(),
+    );
+  }
+  // emit once on mount
+  useEffect(() => { emit(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 function ActiveLayer({
   layer,
+  bbox,
+  zoom,
   selectedFeatureId,
   onFeatureClick,
   onLoaded,
+  onError,
 }: {
   layer: DataLayer;
+  bbox: ViewportBbox | null;
+  zoom: number;
   selectedFeatureId: string | null;
   onFeatureClick: (f: DataLayerFeature, l: DataLayer) => void;
   onLoaded: (layerId: string, features: DataLayerFeature[]) => void;
+  onError: (layerId: string) => void;
 }) {
-  const { data: features = [] } = useLayerFeatures(layer.id);
-  useEffect(() => {
-    onLoaded(layer.id, features);
-  }, [layer.id, features, onLoaded]);
+  const { data: features = [], isError } = useFeaturesInBbox(layer.id, bbox, zoom);
+  useEffect(() => { onLoaded(layer.id, features); }, [layer.id, features, onLoaded]);
+  useEffect(() => { if (isError) onError(layer.id); }, [isError, layer.id, onError]);
+  if (zoom < 6) return null;
   return (
     <LayerRenderer
       layer={layer}
@@ -303,6 +328,44 @@ export function MapaInterativo() {
 
   const mapHostRef = useRef<HTMLDivElement | null>(null);
 
+  // Viewport (bbox + zoom) atualizado via moveend/zoomend
+  const [viewport, setViewport] = useState<ViewportBbox | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(4);
+  const handleViewport = useCallback((b: ViewportBbox, z: number) => {
+    setViewport(b);
+    setZoomLevel(z);
+  }, []);
+
+  // Anti-loop: se uma camada ativa não renderizar em 10s, desativa.
+  const watchdogRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    Object.keys(activeLayerIds).forEach((id) => {
+      if (!activeLayerIds[id]) {
+        if (watchdogRef.current[id]) {
+          window.clearTimeout(watchdogRef.current[id]);
+          delete watchdogRef.current[id];
+        }
+        return;
+      }
+      if (watchdogRef.current[id]) return;
+      watchdogRef.current[id] = window.setTimeout(() => {
+        if (!loadedFeatures[id]) {
+          setActiveLayerIds((prev) => ({ ...prev, [id]: false }));
+          console.warn(`[MapaInterativo] Camada ${id} desativada: sem render em 10s`);
+        }
+      }, 10_000);
+    });
+  }, [activeLayerIds, loadedFeatures]);
+  const handleLayerError = useCallback((layerId: string) => {
+    setActiveLayerIds((prev) => ({ ...prev, [layerId]: false }));
+  }, []);
+
+  const resetLayers = useCallback(() => {
+    try { window.localStorage.removeItem(LAYER_PREFS_KEY); } catch { /* ignore */ }
+    setActiveLayerIds({});
+    setLoadedFeatures({});
+  }, []);
+
 
   return (
     <div ref={mapHostRef} className="geoterra-map-host relative h-full w-full">
@@ -340,12 +403,17 @@ export function MapaInterativo() {
           onFlyBounds={(b) => setFlyBounds(b)}
         />
 
+        <ViewportTracker onChange={handleViewport} />
+
         {activeLayersList.map((l) => (
           <ActiveLayer
             key={l.id}
             layer={l}
+            bbox={viewport}
+            zoom={zoomLevel}
             selectedFeatureId={selectedFeature?.feature.id ?? null}
             onLoaded={handleLayerLoaded}
+            onError={handleLayerError}
             onFeatureClick={(feature, layer) => {
               setSelectedFeature({ feature, layer });
               setSelectedId(null);
@@ -426,6 +494,7 @@ export function MapaInterativo() {
           onZoom={zoomToLayer}
           onActivateAll={activateAll}
           onClearAll={clearAll}
+          onReset={resetLayers}
         />
 
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel overflow-hidden flex flex-col min-h-0">
@@ -481,7 +550,7 @@ export function MapaInterativo() {
         </div>
       </div>
 
-      <MapLegend activeLayers={activeLayersList} />
+      <MapLegend activeLayers={activeLayersList} zoom={zoomLevel} />
 
       <div className="absolute top-4 right-4 z-[999] rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-2 flex items-center gap-1">
         <LayersIcon className="h-3.5 w-3.5 text-muted-foreground ml-1 mr-1" />

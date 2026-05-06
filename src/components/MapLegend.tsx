@@ -9,8 +9,16 @@ const LAYER_LABELS: Record<string, string> = {
   outros: "Outras camadas",
 };
 
-export function MapLegend({ activeLayers }: { activeLayers: DataLayer[] }) {
+export function MapLegend({
+  activeLayers,
+  zoom,
+}: {
+  activeLayers: DataLayer[];
+  zoom?: number;
+}) {
   if (activeLayers.length === 0) return null;
+  const hasLargeLayer = activeLayers.some((l) => (l.features_count ?? 0) > 5000);
+  const tooFarOut = zoom != null && zoom < 6;
   return (
     <div className="absolute bottom-4 right-4 z-[999] rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 max-w-xs">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
@@ -31,6 +39,16 @@ export function MapLegend({ activeLayers }: { activeLayers: DataLayer[] }) {
           </li>
         ))}
       </ul>
+      {tooFarOut && (
+        <div className="mt-2 pt-2 border-t border-border text-[10px] text-amber-500">
+          Aproxime o zoom para ver as feições do CAR.
+        </div>
+      )}
+      {!tooFarOut && hasLargeLayer && (
+        <div className="mt-2 pt-2 border-t border-border text-[10px] text-muted-foreground">
+          Camada grande — feições carregadas conforme você navega.
+        </div>
+      )}
     </div>
   );
 }
