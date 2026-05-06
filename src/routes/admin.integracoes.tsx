@@ -379,27 +379,39 @@ function ProviderCard({ provider, onUpload, jobsCount }: { provider: Integration
 }
 
 function UploadModal({
-  provider, onClose, onSubmit, isSubmitting,
+  provider, onClose, onSubmit, isSubmitting, progress,
 }: {
   provider: IntegrationProvider;
   onClose: () => void;
   onSubmit: (file: File, uf: string, label?: string) => void;
   isSubmitting: boolean;
+  progress: ImportProgress | null;
 }) {
   const [uf, setUf] = useState("");
   const [label, setLabel] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
 
+  const pct = progress && progress.total > 0
+    ? Math.min(100, Math.round((progress.processed / progress.total) * 100))
+    : 0;
+  const phaseLabel: Record<ImportProgress["phase"], string> = {
+    uploading: "Enviando arquivo para o storage...",
+    starting: "Parseando shapefile e criando camada...",
+    processing: `Processando feições... ${progress?.processed.toLocaleString("pt-BR") ?? 0} / ${progress?.total.toLocaleString("pt-BR") ?? 0}`,
+    finalizing: "Cruzando com imóveis cadastrados...",
+    done: "Concluído!",
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={isSubmitting ? undefined : onClose}>
       <div className="bg-card border border-border rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
             <div className="text-sm font-semibold">Enviar shapefile</div>
             <div className="text-[11px] text-muted-foreground">{provider.name}</div>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          <button disabled={isSubmitting} onClick={onClose} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><X className="h-4 w-4" /></button>
         </div>
         <div className="p-4 space-y-3">
           <div>
