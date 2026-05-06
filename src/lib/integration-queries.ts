@@ -103,54 +103,96 @@ export function useUploadAndIngestSicar(
       provider: IntegrationProvider; file: File; uf: string; label?: string;
     }) => {
       const { provider, file, uf, label } = input;
+
+      // 1) Parse local do shapefile no browser
+      onProgress?.({ phase: "parsing", processed: 0, total: 0, failed: 0 });
+      const arrayBuf = await file.arrayBuffer();
+      const parsed = await shp(arrayBuf);
+      const features: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const collect = (fc: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (!fc) return;
+        if (Array.isArray(fc)) { fc.forEach(collect); return; }
+        if (fc.type === "FeatureCollection" && Array.isArray(fc.features)) {
+          features.push(...fc.features);
+        } else if (fc.type === "Feature") {
+          features.push(fc);
+        }
+      };
+      collect(parsed);
+      const total = features.length;
+      if (total === 0) throw new Error("Shapefile sem feições");
+      onProgress?.({ phase: "parsing", processed: total, total, failed: 0 });
+
+      // 2) Cria job (sem ZIP, apenas referência ao JSON intermediário)
       const ts = Date.now();
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${provider.key}/${uf}/${ts}-${safeName}`;
-
-      onProgress?.({ phase: "uploading", processed: 0, total: 0, failed: 0 });
-
-      // 1) Upload do ZIP
-      const { error: upErr } = await sb.storage.from("integration-uploads").upload(path, file, {
-        contentType: file.type || "application/zip",
-        upsert: false,
-      });
-      if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
-
-      // 2) Cria registro do job
+      const safeBase = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/\.zip$/i, "");
       const { data: { user } } = await sb.auth.getUser();
       const { data: job, error: jobErr } = await sb.from("integration_jobs").insert({
         provider_id: provider.id,
         triggered_by: user?.id ?? null,
         status: "pendente",
-        storage_path: path,
         uf: uf.toUpperCase(),
         source_label: label ?? null,
       }).select().single();
       if (jobErr) throw new Error(`Falha ao criar job: ${jobErr.message}`);
 
-      // 3) START leve: cria camada e prepara o job
-      onProgress?.({ phase: "starting", processed: 0, total: 0, failed: 0 });
-      const { data: startRes, error: startErr } = await sb.functions.invoke("ingest-sicar", {
-        body: { job_id: job.id },
-      });
-      if (startErr) throw new Error(`Inicialização falhou: ${startErr.message}`);
+      const jsonPath = `geojson/${job.id}/${ts}-${safeBase}.json`;
 
-      // 4) Parse único do ZIP para GeoJSON intermediário no storage
-      const { data: parseRes, error: parseErr } = await sb.functions.invoke("parse-shapefile-to-geojson", {
-        body: { job_id: job.id },
+      // 3) Upload do JSON puro (texto leve) para o storage
+      onProgress?.({ phase: "uploading", processed: 0, total, failed: 0 });
+      const jsonBlob = new Blob([JSON.stringify(features)], { type: "application/json" });
+      const { error: upErr } = await sb.storage.from("integration-uploads").upload(jsonPath, jsonBlob, {
+        contentType: "application/json",
+        upsert: false,
       });
-      if (parseErr) throw new Error(`Conversão GeoJSON falhou: ${parseErr.message}`);
-      if (parseRes?.cancelled) throw new Error("Importação cancelada pelo usuário");
-      let total: number = parseRes?.total_features ?? startRes?.total_features ?? 0;
-      if (total === 0) throw new Error("Shapefile sem feições");
+      if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
+
+      // 4) Cria/atualiza camada (start leve inline) e atualiza job
+      const layerKey = provider.data_source_key ?? `sicar-${uf.toLowerCase()}`;
+      const layerName = `SICAR — ${uf.toUpperCase()}${label ? ` (${label})` : ""}`;
+      await sb.from("data_sources").upsert({
+        key: layerKey,
+        name: `SICAR ${uf.toUpperCase()}`.trim(),
+        source_kind: "geoespacial",
+        source_type: "arquivo",
+        category: "ambiental",
+        status: "ativa",
+        enabled: true,
+        last_sync_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+      const { data: layer, error: layerErr } = await sb.from("data_layers").upsert({
+        data_source_key: layerKey,
+        name: layerName,
+        layer_type: provider.layer_type ?? "car",
+        geometry_type: "polygon",
+        status: "ativa",
+        color: provider.default_color ?? "#5fbb6f",
+        visible_to_users: true,
+        last_sync_at: new Date().toISOString(),
+      }, { onConflict: "data_source_key" }).select().single();
+      if (layerErr) throw new Error(`Erro ao criar camada: ${layerErr.message}`);
+
+      // Limpa feições antigas
+      await sb.from("data_layer_features").delete().eq("layer_id", layer.id);
+
+      await sb.from("integration_jobs").update({
+        status: "processando",
+        started_at: new Date().toISOString(),
+        storage_path: jsonPath,
+        geojson_path: jsonPath,
+        total_features: total,
+        processed_features: 0,
+        failed_features: 0,
+        layer_id: layer.id,
+        log: `Parse local concluído: ${total.toLocaleString("pt-BR")} feições. Iniciando lotes...`,
+      }).eq("id", job.id);
 
       // 5) Loop de chunks
       let offset = 0;
       let totalFailed = 0;
       onProgress?.({ phase: "processing", processed: 0, total, failed: 0 });
 
-      while (true) {
-        // Verifica cancelamento (lê status atualizado do job)
+      while (offset < total) {
         const { data: cur } = await sb
           .from("integration_jobs").select("status").eq("id", job.id).maybeSingle();
         if (cur?.status === "cancelado") {
@@ -162,10 +204,7 @@ export function useUploadAndIngestSicar(
           { body: { job_id: job.id, offset, limit: CHUNK_SIZE } }
         );
         if (chunkErr) {
-          if (offset === 0 || total === 0) {
-            throw new Error(`Primeiro lote falhou: ${chunkErr.message}`);
-          }
-          // Falha de um chunk inteiro: registra e tenta próximo
+          if (offset === 0) throw new Error(`Primeiro lote falhou: ${chunkErr.message}`);
           console.error("Chunk error:", chunkErr);
           totalFailed += CHUNK_SIZE;
           offset += CHUNK_SIZE;
@@ -173,18 +212,12 @@ export function useUploadAndIngestSicar(
           await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
           continue;
         }
-        if (chunkRes?.cancelled) {
-          throw new Error("Importação cancelada pelo usuário");
-        }
-        if (typeof chunkRes?.total === "number") {
-          total = chunkRes.total;
-        }
-        if (offset === 0 && total === 0) throw new Error("Shapefile sem feições");
+        if (chunkRes?.cancelled) throw new Error("Importação cancelada pelo usuário");
         totalFailed += chunkRes?.failed ?? 0;
         offset = chunkRes?.nextOffset ?? offset + CHUNK_SIZE;
         onProgress?.({
           phase: "processing",
-          processed: total > 0 ? Math.min(offset, total) : offset,
+          processed: Math.min(offset, total),
           total,
           failed: totalFailed,
         });
@@ -192,7 +225,7 @@ export function useUploadAndIngestSicar(
         await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
       }
 
-      // 6) Finaliza: cruza com imóveis e marca sucesso
+      // 6) Finaliza
       onProgress?.({ phase: "finalizing", processed: total, total, failed: totalFailed });
       const { data: finRes, error: finErr } = await sb.functions.invoke(
         "finalize-shapefile-import",
