@@ -328,6 +328,44 @@ export function MapaInterativo() {
 
   const mapHostRef = useRef<HTMLDivElement | null>(null);
 
+  // Viewport (bbox + zoom) atualizado via moveend/zoomend
+  const [viewport, setViewport] = useState<ViewportBbox | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(4);
+  const handleViewport = useCallback((b: ViewportBbox, z: number) => {
+    setViewport(b);
+    setZoomLevel(z);
+  }, []);
+
+  // Anti-loop: se uma camada ativa não renderizar em 10s, desativa.
+  const watchdogRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    Object.keys(activeLayerIds).forEach((id) => {
+      if (!activeLayerIds[id]) {
+        if (watchdogRef.current[id]) {
+          window.clearTimeout(watchdogRef.current[id]);
+          delete watchdogRef.current[id];
+        }
+        return;
+      }
+      if (watchdogRef.current[id]) return;
+      watchdogRef.current[id] = window.setTimeout(() => {
+        if (!loadedFeatures[id]) {
+          setActiveLayerIds((prev) => ({ ...prev, [id]: false }));
+          console.warn(`[MapaInterativo] Camada ${id} desativada: sem render em 10s`);
+        }
+      }, 10_000);
+    });
+  }, [activeLayerIds, loadedFeatures]);
+  const handleLayerError = useCallback((layerId: string) => {
+    setActiveLayerIds((prev) => ({ ...prev, [layerId]: false }));
+  }, []);
+
+  const resetLayers = useCallback(() => {
+    try { window.localStorage.removeItem(LAYER_PREFS_KEY); } catch { /* ignore */ }
+    setActiveLayerIds({});
+    setLoadedFeatures({});
+  }, []);
+
 
   return (
     <div ref={mapHostRef} className="geoterra-map-host relative h-full w-full">
