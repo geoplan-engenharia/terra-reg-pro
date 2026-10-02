@@ -120,6 +120,8 @@ export type Database = {
           data_source_key: string
           external_id: string | null
           geometry: unknown
+          geometry_3857: unknown
+          geometry_3857_low: unknown
           geometry_geojson: Json
           id: string
           layer_id: string
@@ -138,6 +140,8 @@ export type Database = {
           data_source_key: string
           external_id?: string | null
           geometry?: unknown
+          geometry_3857?: unknown
+          geometry_3857_low?: unknown
           geometry_geojson: Json
           id?: string
           layer_id: string
@@ -156,6 +160,8 @@ export type Database = {
           data_source_key?: string
           external_id?: string | null
           geometry?: unknown
+          geometry_3857?: unknown
+          geometry_3857_low?: unknown
           geometry_geojson?: Json
           id?: string
           layer_id?: string
@@ -1733,6 +1739,8 @@ export type Database = {
           data_source_key: string
           external_id: string | null
           geometry: unknown
+          geometry_3857: unknown
+          geometry_3857_low: unknown
           geometry_geojson: Json
           id: string
           layer_id: string
@@ -1775,6 +1783,8 @@ export type Database = {
           data_source_key: string
           external_id: string | null
           geometry: unknown
+          geometry_3857: unknown
+          geometry_3857_low: unknown
           geometry_geojson: Json
           id: string
           layer_id: string
@@ -1791,6 +1801,10 @@ export type Database = {
         }
       }
       get_vector_tile: {
+        Args: { _layer_id: string; _x: number; _y: number; _z: number }
+        Returns: string
+      }
+      get_vector_tile_bin: {
         Args: { _layer_id: string; _x: number; _y: number; _z: number }
         Returns: string
       }
