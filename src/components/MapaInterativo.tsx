@@ -17,6 +17,7 @@ import { useGuardTrial } from "./TrialGuard";
 import { useDataLayers, type DataLayer, type DataLayerFeature } from "@/lib/layer-queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MapTools, type ToolMode } from "./MapTools";
 
 const LAYER_PREFS_KEY = "geoterra:active-layers";
 const BASEMAP_PREFS_KEY = "geoterra:basemap";
@@ -100,6 +101,10 @@ export function MapaInterativo() {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const styleReady = useRef(false);
+  const outerRef = useRef<HTMLDivElement | null>(null);
+  const [mapObj, setMapObj] = useState<MLMap | null>(null);
+  const toolModeRef = useRef<ToolMode>("none");
+  const handleToolMode = useCallback((m: ToolMode) => { toolModeRef.current = m; }, []);
 
   // Load prefs after hydration
   useEffect(() => {
@@ -164,6 +169,7 @@ export function MapaInterativo() {
     map.on("style.load", () => { styleReady.current = true; setStyleVersion((v) => v + 1); });
 
     map.on("click", async (e: maplibregl.MapMouseEvent) => {
+      if (toolModeRef.current !== "none") return;
       // Properties first
       const props = map.queryRenderedFeatures(e.point, { layers: map.getLayer("props-circle") ? ["props-circle"] : [] });
       if (props.length) {
@@ -204,7 +210,8 @@ export function MapaInterativo() {
     });
 
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    setMapObj(map);
+    return () => { map.remove(); mapRef.current = null; setMapObj(null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -327,8 +334,16 @@ export function MapaInterativo() {
   }, [fitBounds]);
 
   return (
-    <div className="geoterra-map-host relative h-full w-full">
+    <div ref={outerRef} className="geoterra-map-host relative h-full w-full">
       <div ref={hostRef} className="h-full w-full" />
+      <MapTools
+        map={mapObj}
+        styleVersion={styleVersion}
+        mapContainerRef={outerRef}
+        onModeChange={handleToolMode}
+        onFlyTo={(lat, lon, zoom) => flyTo(lat, lon, zoom ?? 15)}
+        onFlyBounds={(b) => fitBounds(b, 16)}
+      />
 
       <div className="absolute top-4 left-4 w-80 max-h-[calc(100%-2rem)] flex flex-col gap-3 z-[999]">
         <div className="rounded-lg border border-border bg-card/95 backdrop-blur shadow-panel p-3 space-y-2">
