@@ -6,4 +6,9 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+export default defineConfig({
+  vite: {
+    // MapLibre v6 loads its web worker via a relative module URL; pre-bundling breaks it.
+    optimizeDeps: { exclude: ["maplibre-gl"] },
+  },
+});
