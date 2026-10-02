@@ -53,6 +53,28 @@ Deno.serve(async (req) => {
     const inserted = (job.processed_features ?? 0) - (job.failed_features ?? 0);
     const status = (job.failed_features ?? 0) > 0 && inserted === 0 ? "erro" : "sucesso";
 
+    // Invalida o cache de vector tiles desta camada
+    try {
+      const bucket = admin.storage.from("vector-tiles-cache");
+      const walk = async (prefix: string): Promise<string[]> => {
+        const out: string[] = [];
+        for (let offset = 0; ; offset += 1000) {
+          const { data } = await bucket.list(prefix, { limit: 1000, offset });
+          if (!data || data.length === 0) break;
+          for (const it of data) {
+            const p = `${prefix}/${it.name}`;
+            if (it.id) out.push(p); else out.push(...(await walk(p)));
+          }
+          if (data.length < 1000) break;
+        }
+        return out;
+      };
+      const files = await walk(job.layer_id);
+      for (let i = 0; i < files.length; i += 500) await bucket.remove(files.slice(i, i + 500));
+    } catch (e) {
+      console.error("cache invalidation failed", e);
+    }
+
     await admin.from("integration_jobs").update({
       status,
       features_imported: inserted,

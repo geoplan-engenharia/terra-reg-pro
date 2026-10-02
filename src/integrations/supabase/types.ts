@@ -116,10 +116,13 @@ export type Database = {
           bbox_max_lng: number | null
           bbox_min_lat: number | null
           bbox_min_lng: number | null
+          centroid_3857: unknown
           created_at: string
           data_source_key: string
           external_id: string | null
           geometry: unknown
+          geometry_3857: unknown
+          geometry_3857_low: unknown
           geometry_geojson: Json
           id: string
           layer_id: string
@@ -134,10 +137,13 @@ export type Database = {
           bbox_max_lng?: number | null
           bbox_min_lat?: number | null
           bbox_min_lng?: number | null
+          centroid_3857?: unknown
           created_at?: string
           data_source_key: string
           external_id?: string | null
           geometry?: unknown
+          geometry_3857?: unknown
+          geometry_3857_low?: unknown
           geometry_geojson: Json
           id?: string
           layer_id: string
@@ -152,10 +158,13 @@ export type Database = {
           bbox_max_lng?: number | null
           bbox_min_lat?: number | null
           bbox_min_lng?: number | null
+          centroid_3857?: unknown
           created_at?: string
           data_source_key?: string
           external_id?: string | null
           geometry?: unknown
+          geometry_3857?: unknown
+          geometry_3857_low?: unknown
           geometry_geojson?: Json
           id?: string
           layer_id?: string
@@ -170,6 +179,32 @@ export type Database = {
             columns: ["layer_id"]
             isOneToOne: false
             referencedRelation: "data_layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_layer_points: {
+        Row: {
+          feature_id: string
+          geom: unknown
+          layer_id: string
+        }
+        Insert: {
+          feature_id: string
+          geom: unknown
+          layer_id: string
+        }
+        Update: {
+          feature_id?: string
+          geom?: unknown
+          layer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_layer_points_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: true
+            referencedRelation: "data_layer_features"
             referencedColumns: ["id"]
           },
         ]
@@ -1729,10 +1764,13 @@ export type Database = {
           bbox_max_lng: number | null
           bbox_min_lat: number | null
           bbox_min_lng: number | null
+          centroid_3857: unknown
           created_at: string
           data_source_key: string
           external_id: string | null
           geometry: unknown
+          geometry_3857: unknown
+          geometry_3857_low: unknown
           geometry_geojson: Json
           id: string
           layer_id: string
@@ -1771,10 +1809,13 @@ export type Database = {
           bbox_max_lng: number | null
           bbox_min_lat: number | null
           bbox_min_lng: number | null
+          centroid_3857: unknown
           created_at: string
           data_source_key: string
           external_id: string | null
           geometry: unknown
+          geometry_3857: unknown
+          geometry_3857_low: unknown
           geometry_geojson: Json
           id: string
           layer_id: string
@@ -1791,6 +1832,10 @@ export type Database = {
         }
       }
       get_vector_tile: {
+        Args: { _layer_id: string; _x: number; _y: number; _z: number }
+        Returns: string
+      }
+      get_vector_tile_bin: {
         Args: { _layer_id: string; _x: number; _y: number; _z: number }
         Returns: string
       }
@@ -2581,12 +2626,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2610,11 +2655,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2635,11 +2680,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2660,11 +2705,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2677,11 +2722,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
