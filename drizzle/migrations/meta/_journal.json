@@ -8,6 +8,13 @@
       "when": 1790967692076,
       "tag": "0000_vector_tiles_3857",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790968011466,
+      "tag": "0001_vector_tiles_lowzoom_points",
+      "breakpoints": true
     }
   ]
 }

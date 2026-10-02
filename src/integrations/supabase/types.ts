@@ -116,6 +116,7 @@ export type Database = {
           bbox_max_lng: number | null
           bbox_min_lat: number | null
           bbox_min_lng: number | null
+          centroid_3857: unknown
           created_at: string
           data_source_key: string
           external_id: string | null
@@ -136,6 +137,7 @@ export type Database = {
           bbox_max_lng?: number | null
           bbox_min_lat?: number | null
           bbox_min_lng?: number | null
+          centroid_3857?: unknown
           created_at?: string
           data_source_key: string
           external_id?: string | null
@@ -156,6 +158,7 @@ export type Database = {
           bbox_max_lng?: number | null
           bbox_min_lat?: number | null
           bbox_min_lng?: number | null
+          centroid_3857?: unknown
           created_at?: string
           data_source_key?: string
           external_id?: string | null
@@ -1735,6 +1738,7 @@ export type Database = {
           bbox_max_lng: number | null
           bbox_min_lat: number | null
           bbox_min_lng: number | null
+          centroid_3857: unknown
           created_at: string
           data_source_key: string
           external_id: string | null
@@ -1779,6 +1783,7 @@ export type Database = {
           bbox_max_lng: number | null
           bbox_min_lat: number | null
           bbox_min_lng: number | null
+          centroid_3857: unknown
           created_at: string
           data_source_key: string
           external_id: string | null
