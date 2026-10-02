@@ -276,8 +276,8 @@ export function MapTools({
 
   // Ensure layers after map init/basemap change, restore data
   useEffect(() => {
-    if (!map) return;
-    ensureToolLayers(map);
+    if (!map || styleVersion === 0) return;
+    try { ensureToolLayers(map); } catch { return; }
     redraw();
     (map.getSource("kml") as GeoJSONSource | undefined)?.setData(kmlData ?? EMPTY_FC);
     // eslint-disable-next-line react-hooks/exhaustive-deps
