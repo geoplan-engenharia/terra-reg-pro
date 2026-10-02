@@ -99,6 +99,7 @@ export function MapaInterativo() {
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MLMap | null>(null);
+  const styleReady = useRef(false);
 
   // Load prefs after hydration
   useEffect(() => {
@@ -160,7 +161,7 @@ export function MapaInterativo() {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
     map.on("zoomend", () => setZoomLevel(map.getZoom()));
-    map.on("style.load", () => setStyleVersion((v) => v + 1));
+    map.on("style.load", () => { styleReady.current = true; setStyleVersion((v) => v + 1); });
 
     map.on("click", async (e: maplibregl.MapMouseEvent) => {
       // Properties first
@@ -211,13 +212,14 @@ export function MapaInterativo() {
   const firstBasemap = useRef(true);
   useEffect(() => {
     if (firstBasemap.current) { firstBasemap.current = false; return; }
+    styleReady.current = false;
     mapRef.current?.setStyle(buildStyle(basemap));
   }, [basemap]);
 
   // Data layers (vector tiles)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !styleReady.current) return;
     const wanted = new Set(activeLayersList.map((l) => l.id));
     // remove stale
     for (const l of map.getStyle().layers ?? []) {
@@ -261,7 +263,7 @@ export function MapaInterativo() {
   // Selected feature highlight
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !styleReady.current) return;
     const sel = selectedFeature?.feature.id ?? "";
     for (const l of activeLayersList) {
       if (map.getLayer(`dl-sel-${l.id}`)) map.setFilter(`dl-sel-${l.id}`, ["==", ["get", "id"], sel]);
@@ -271,7 +273,7 @@ export function MapaInterativo() {
   // Properties (GeoJSON points)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !styleReady.current) return;
     const fc: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
       features: filtrados.map((p) => ({
