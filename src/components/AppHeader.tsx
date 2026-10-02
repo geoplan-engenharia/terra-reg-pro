@@ -1,5 +1,6 @@
 import { Search, Bell, LogOut, HelpCircle } from "lucide-react";
 import { useAuth, ROLE_LABEL } from "@/lib/auth";
+import { ThemeToggle } from "./ThemeToggle";
 import { useNavigate } from "@tanstack/react-router";
 
 export function AppHeader({ title, subtitle, onOpenTutorial }: { title: string; subtitle?: string; onOpenTutorial?: () => void }) {
@@ -26,7 +27,7 @@ export function AppHeader({ title, subtitle, onOpenTutorial }: { title: string; 
         {onOpenTutorial && (
           <button
             onClick={onOpenTutorial}
-            className="hidden sm:inline-flex items-center gap-1.5 h-9 rounded-md border border-border bg-card hover:bg-accent/10 px-3 text-xs"
+            className="hidden sm:inline-flex items-center gap-1.5 h-9 rounded-md border border-border bg-card hover:bg-accent px-3 text-xs"
             aria-label="Tutorial"
             title="Reabrir tutorial"
           >
@@ -34,7 +35,8 @@ export function AppHeader({ title, subtitle, onOpenTutorial }: { title: string; 
             Tutorial
           </button>
         )}
-        <button className="relative h-9 w-9 rounded-md border border-border bg-card hover:bg-accent/10 grid place-items-center" aria-label="Notificações">
+        <ThemeToggle />
+        <button className="relative h-9 w-9 rounded-md border border-border bg-card hover:bg-accent grid place-items-center" aria-label="Notificações">
           <Bell className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-2 pl-2 border-l border-border">
@@ -48,7 +50,7 @@ export function AppHeader({ title, subtitle, onOpenTutorial }: { title: string; 
             {initials}
           </div>
           <button onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
-            className="h-9 w-9 rounded-md border border-border bg-card hover:bg-accent/10 grid place-items-center" aria-label="Sair">
+            className="h-9 w-9 rounded-md border border-border bg-card hover:bg-accent grid place-items-center" aria-label="Sair">
             <LogOut className="h-4 w-4" />
           </button>
         </div>
