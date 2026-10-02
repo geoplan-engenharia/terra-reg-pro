@@ -183,6 +183,32 @@ export type Database = {
           },
         ]
       }
+      data_layer_points: {
+        Row: {
+          feature_id: string
+          geom: unknown
+          layer_id: string
+        }
+        Insert: {
+          feature_id: string
+          geom: unknown
+          layer_id: string
+        }
+        Update: {
+          feature_id?: string
+          geom?: unknown
+          layer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_layer_points_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: true
+            referencedRelation: "data_layer_features"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_layers: {
         Row: {
           color: string

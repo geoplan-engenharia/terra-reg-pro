@@ -15,6 +15,13 @@
       "when": 1790968011466,
       "tag": "0001_vector_tiles_lowzoom_points",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790968464869,
+      "tag": "0002_layer_points_narrow_table",
+      "breakpoints": true
     }
   ]
 }
