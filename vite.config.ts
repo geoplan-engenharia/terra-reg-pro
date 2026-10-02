@@ -10,5 +10,12 @@ export default defineConfig({
   vite: {
     // MapLibre v6 loads its web worker via a relative module URL; pre-bundling breaks it.
     optimizeDeps: { exclude: ["maplibre-gl"] },
+    // but-unzip (used by shpjs) only exports "node"/"browser" import conditions,
+    // which the Worker/SSR build can't resolve. Point it at the browser build.
+    resolve: {
+      alias: {
+        "but-unzip": new URL("./node_modules/but-unzip/index.browser.min.mjs", import.meta.url).pathname,
+      },
+    },
   },
 });
