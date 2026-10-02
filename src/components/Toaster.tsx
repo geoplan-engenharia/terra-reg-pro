@@ -4,7 +4,7 @@ export function Toaster() {
   return (
     <SonnerToaster
       position="top-right"
-      theme="dark"
+      theme="light"
       toastOptions={{
         className: "!bg-card !border-border !text-foreground",
       }}
