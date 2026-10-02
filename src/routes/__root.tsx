@@ -45,8 +45,8 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head><HeadContent /></head>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head><HeadContent /><script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("geoterra_theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}` }} /></head>
       <body>{children}<Scripts /></body>
     </html>
   );
