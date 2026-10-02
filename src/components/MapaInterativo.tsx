@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import maplibregl, { type Map as MLMap, type StyleSpecification } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
+import type { Map as MLMap, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useProperties } from "@/lib/queries";
 import type { RuralProperty } from "@/lib/types";
@@ -154,15 +155,14 @@ export function MapaInterativo() {
       center: [-51.9253, -14.235],
       zoom: 4,
       attributionControl: { compact: true },
-      // @ts-expect-error – supported at runtime, needed for screenshots
-      preserveDrawingBuffer: true,
+      canvasContextAttributes: { preserveDrawingBuffer: true },
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
     map.on("zoomend", () => setZoomLevel(map.getZoom()));
     map.on("style.load", () => setStyleVersion((v) => v + 1));
 
-    map.on("click", async (e) => {
+    map.on("click", async (e: maplibregl.MapMouseEvent) => {
       // Properties first
       const props = map.queryRenderedFeatures(e.point, { layers: map.getLayer("props-circle") ? ["props-circle"] : [] });
       if (props.length) {
@@ -193,7 +193,7 @@ export function MapaInterativo() {
       if (b) map.fitBounds(b, { padding: 80, maxZoom: 16, duration: 800 });
     });
 
-    map.on("mousemove", (e) => {
+    map.on("mousemove", (e: maplibregl.MapMouseEvent) => {
       const ids = [
         "props-circle",
         ...stateRef.current.activeLayersList.flatMap((l) => [`dl-fill-${l.id}`, `dl-pts-${l.id}`]),

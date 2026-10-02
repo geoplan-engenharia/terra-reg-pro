@@ -18,7 +18,7 @@ function tileResponse(bytes: Uint8Array, cache: "HIT" | "MISS") {
       headers: { "Cache-Control": "public, max-age=3600", "X-Tile-Cache": cache },
     });
   }
-  return new Response(bytes, {
+  return new Response(bytes as unknown as BodyInit, {
     status: 200,
     headers: {
       "Content-Type": "application/x-protobuf",
