@@ -522,6 +522,10 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["integration_job_status"]
           storage_path: string | null
+          tiles_done: number
+          tiles_saved: number
+          tiles_status: string | null
+          tiles_total: number | null
           total_features: number | null
           triggered_by: string | null
           uf: string | null
@@ -545,6 +549,10 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["integration_job_status"]
           storage_path?: string | null
+          tiles_done?: number
+          tiles_saved?: number
+          tiles_status?: string | null
+          tiles_total?: number | null
           total_features?: number | null
           triggered_by?: string | null
           uf?: string | null
@@ -568,6 +576,10 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["integration_job_status"]
           storage_path?: string | null
+          tiles_done?: number
+          tiles_saved?: number
+          tiles_status?: string | null
+          tiles_total?: number | null
           total_features?: number | null
           triggered_by?: string | null
           uf?: string | null
@@ -1831,9 +1843,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      get_vector_tile: {
-        Args: { _layer_id: string; _x: number; _y: number; _z: number }
-        Returns: string
+      get_layer_extent_3857: {
+        Args: { _layer_id: string }
+        Returns: {
+          xmax: number
+          xmin: number
+          ymax: number
+          ymin: number
+        }[]
       }
       get_vector_tile_bin: {
         Args: { _layer_id: string; _x: number; _y: number; _z: number }

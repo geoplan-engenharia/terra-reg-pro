@@ -164,6 +164,16 @@ export function MapaInterativo() {
     mapRef.current?.fitBounds(b, { padding: 60, maxZoom, duration: 1000 });
   }, []);
 
+  // Token atual para os recortes (atualizado em cada renovação de sessão)
+  const tileTokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => { tileTokenRef.current = data.session?.access_token ?? null; });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      tileTokenRef.current = session?.access_token ?? null;
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   // Init map once
   useEffect(() => {
     if (!hostRef.current || mapRef.current) return;
@@ -174,6 +184,13 @@ export function MapaInterativo() {
       zoom: 4,
       attributionControl: { compact: true },
       canvasContextAttributes: { preserveDrawingBuffer: true },
+      // Envia o token do usuário apenas nas URLs dos recortes da própria aplicação.
+      transformRequest: (url) => {
+        if (url.startsWith(`${window.location.origin}/api/public/vector-tile`) && tileTokenRef.current) {
+          return { url, headers: { Authorization: `Bearer ${tileTokenRef.current}` } };
+        }
+        return { url };
+      },
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
@@ -286,7 +303,7 @@ export function MapaInterativo() {
       if (!map.getSource(src)) {
         map.addSource(src, { type: "vector", tiles: [tileUrl(l)], minzoom: 2, maxzoom: 16 });
         map.addLayer({
-          id: `dl-pts-${l.id}`, type: "circle", source: src, "source-layer": "points", maxzoom: 9,
+          id: `dl-pts-${l.id}`, type: "circle", source: src, "source-layer": "points", maxzoom: 8,
           paint: {
             "circle-color": l.color,
             "circle-opacity": 0.75,
@@ -294,15 +311,15 @@ export function MapaInterativo() {
           },
         }, before);
         map.addLayer({
-          id: `dl-fill-${l.id}`, type: "fill", source: src, "source-layer": "features", minzoom: 9,
+          id: `dl-fill-${l.id}`, type: "fill", source: src, "source-layer": "features", minzoom: 8,
           paint: { "fill-color": l.color, "fill-opacity": 0.35 },
         }, before);
         map.addLayer({
-          id: `dl-line-${l.id}`, type: "line", source: src, "source-layer": "features", minzoom: 9,
-          paint: { "line-color": l.color, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.4, 14, 1.2] },
+          id: `dl-line-${l.id}`, type: "line", source: src, "source-layer": "features", minzoom: 8,
+          paint: { "line-color": l.color, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.4, 14, 1.2] },
         }, before);
         map.addLayer({
-          id: `dl-sel-${l.id}`, type: "line", source: src, "source-layer": "features", minzoom: 9,
+          id: `dl-sel-${l.id}`, type: "line", source: src, "source-layer": "features", minzoom: 8,
           filter: ["==", ["get", "id"], ""],
           paint: { "line-color": "#ffffff", "line-width": 3 },
         }, before);

@@ -43,10 +43,14 @@ export interface IntegrationJob {
   finished_at: string | null;
   created_at: string;
   updated_at: string;
+  tiles_status?: string | null;
+  tiles_done?: number;
+  tiles_total?: number | null;
+  tiles_saved?: number;
 }
 
 export interface ImportProgress {
-  phase: "parsing" | "starting" | "processing" | "finalizing" | "done";
+  phase: "parsing" | "starting" | "processing" | "finalizing" | "tiles" | "done";
   processed: number;
   total: number;
   failed: number;
@@ -222,6 +226,15 @@ export function useUploadAndIngestSicar(
       );
       if (finErr) throw new Error(`Finalização falhou: ${finErr.message}`);
 
+      // 6) Pré-gera os recortes do mapa (zooms 5–12). Falha aqui não invalida a importação:
+      // dá para continuar depois pelo botão "Gerar tiles".
+      try {
+        await runTilePregeneration(job.id, false, (p) =>
+          onProgress?.({ phase: "tiles", processed: p.done, total: p.total, failed: 0 }));
+      } catch (e) {
+        console.warn("pré-geração de tiles interrompida", e);
+      }
+
       onProgress?.({ phase: "done", processed: total, total, failed: totalFailed });
       return finRes;
     },
@@ -339,5 +352,45 @@ export function useCleanupOrphanFiles() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration_jobs"] });
     },
+  });
+}
+
+export interface TileProgress { done: number; total: number; saved: number; finished: boolean }
+
+// Chama o endpoint em lotes até concluir; cada lote continua de onde o anterior parou.
+export async function runTilePregeneration(
+  jobId: string,
+  restart: boolean,
+  onProgress?: (p: TileProgress) => void,
+  signal?: { cancelled: boolean },
+): Promise<TileProgress> {
+  let first = true;
+  for (;;) {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Sessão expirada");
+    const res = await fetch("/api/public/pregenerate-tiles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ job_id: jobId, restart: restart && first }),
+    });
+    first = false;
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error ?? `Erro ${res.status}`);
+    onProgress?.(body as TileProgress);
+    if (body.finished || signal?.cancelled) return body as TileProgress;
+  }
+}
+
+export function usePregenerateTiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ jobId, restart, onProgress }: {
+      jobId: string; restart?: boolean; onProgress?: (p: TileProgress) => void;
+    }) => runTilePregeneration(jobId, !!restart, (p) => {
+      onProgress?.(p);
+      qc.invalidateQueries({ queryKey: ["integration_jobs"] });
+    }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["integration_jobs"] }),
   });
 }
