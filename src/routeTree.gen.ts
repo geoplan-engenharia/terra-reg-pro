@@ -34,6 +34,7 @@ import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminBugsRouteImport } from './routes/admin.bugs'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as ApiPublicVectorTileRouteImport } from './routes/api/public/vector-tile'
+import { Route as ApiPublicPregenerateTilesRouteImport } from './routes/api/public/pregenerate-tiles'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -160,6 +161,12 @@ const ApiPublicVectorTileRoute = ApiPublicVectorTileRouteImport.update({
   path: '/api/public/vector-tile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPregenerateTilesRoute =
+  ApiPublicPregenerateTilesRouteImport.update({
+    id: '/api/public/pregenerate-tiles',
+    path: '/api/public/pregenerate-tiles',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/pregenerate-tiles': typeof ApiPublicPregenerateTilesRoute
   '/api/public/vector-tile': typeof ApiPublicVectorTileRoute
 }
 export interface FileRoutesByTo {
@@ -212,6 +220,7 @@ export interface FileRoutesByTo {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/pregenerate-tiles': typeof ApiPublicPregenerateTilesRoute
   '/api/public/vector-tile': typeof ApiPublicVectorTileRoute
 }
 export interface FileRoutesById {
@@ -240,6 +249,7 @@ export interface FileRoutesById {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/pregenerate-tiles': typeof ApiPublicPregenerateTilesRoute
   '/api/public/vector-tile': typeof ApiPublicVectorTileRoute
 }
 export interface FileRouteTypes {
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/usuarios'
     | '/admin/'
+    | '/api/public/pregenerate-tiles'
     | '/api/public/vector-tile'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/usuarios'
     | '/admin'
+    | '/api/public/pregenerate-tiles'
     | '/api/public/vector-tile'
   id:
     | '__root__'
@@ -322,6 +334,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/usuarios'
     | '/admin/'
+    | '/api/public/pregenerate-tiles'
     | '/api/public/vector-tile'
   fileRoutesById: FileRoutesById
 }
@@ -342,6 +355,7 @@ export interface RootRouteChildren {
   RegrasDiagnosticoRoute: typeof RegrasDiagnosticoRoute
   SignupRoute: typeof SignupRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
+  ApiPublicPregenerateTilesRoute: typeof ApiPublicPregenerateTilesRoute
   ApiPublicVectorTileRoute: typeof ApiPublicVectorTileRoute
 }
 
@@ -522,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVectorTileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pregenerate-tiles': {
+      id: '/api/public/pregenerate-tiles'
+      path: '/api/public/pregenerate-tiles'
+      fullPath: '/api/public/pregenerate-tiles'
+      preLoaderRoute: typeof ApiPublicPregenerateTilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -566,6 +587,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegrasDiagnosticoRoute: RegrasDiagnosticoRoute,
   SignupRoute: SignupRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
+  ApiPublicPregenerateTilesRoute: ApiPublicPregenerateTilesRoute,
   ApiPublicVectorTileRoute: ApiPublicVectorTileRoute,
 }
 export const routeTree = rootRouteImport
