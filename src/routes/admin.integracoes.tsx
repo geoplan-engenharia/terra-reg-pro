@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import {
   useIntegrationProviders, useIntegrationJobs, useUpsertProvider,
   useUploadAndIngestSicar, useDeleteIntegrationJob, useCleanupOrphanFiles,
-  useCancelIntegrationJob,
+  useCancelIntegrationJob, usePregenerateTiles,
   type IntegrationProvider, type IntegrationJobStatus, type IntegrationJob,
   type ImportProgress,
 } from "@/lib/integration-queries";
@@ -44,6 +44,8 @@ function IntegracoesPage() {
   const deleteJob = useDeleteIntegrationJob();
   const cleanupOrphans = useCleanupOrphanFiles();
   const cancelJob = useCancelIntegrationJob();
+  const pregen = usePregenerateTiles();
+  const [tilesJobId, setTilesJobId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<IntegrationProvider | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<IntegrationJob | null>(null);
@@ -220,9 +222,43 @@ function IntegracoesPage() {
                               />
                             </div>
                           )}
+                          {j.status === "sucesso" && j.tiles_total != null && j.tiles_total > 0 && (
+                            <div className="mt-1">
+                              <div className="text-[10px] text-muted-foreground">
+                                Tiles: {(j.tiles_done ?? 0).toLocaleString("pt-BR")}/{j.tiles_total.toLocaleString("pt-BR")}
+                                {j.tiles_status === "concluido" ? ` · ${(j.tiles_saved ?? 0).toLocaleString("pt-BR")} salvos` : ""}
+                              </div>
+                              <div className="h-1 w-32 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full bg-primary transition-all"
+                                  style={{ width: `${Math.min(100, Math.round(((j.tiles_done ?? 0) / j.tiles_total) * 100))}%` }} />
+                              </div>
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="inline-flex items-center gap-1">
+                            {j.status === "sucesso" && j.layer_id && (
+                              <button
+                                onClick={async () => {
+                                  const resume = j.tiles_status === "parcial" || j.tiles_status === "gerando";
+                                  setTilesJobId(j.id);
+                                  try {
+                                    const r = await pregen.mutateAsync({ jobId: j.id, restart: !resume });
+                                    toast.success(`Tiles gerados: ${r.saved.toLocaleString("pt-BR")} recortes salvos`);
+                                  } catch (e) {
+                                    toast.error(`Geração interrompida: ${(e as Error).message}. Clique de novo para continuar.`);
+                                  } finally {
+                                    setTilesJobId(null);
+                                  }
+                                }}
+                                disabled={pregen.isPending}
+                                title={j.tiles_status === "parcial" || j.tiles_status === "gerando" ? "Continuar geração de tiles" : "Gerar tiles"}
+                                className="inline-flex items-center gap-1 h-7 px-2 rounded border border-border text-[11px] hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition disabled:opacity-30"
+                              >
+                                {tilesJobId === j.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layers className="h-3.5 w-3.5" />}
+                                {j.tiles_status === "parcial" || j.tiles_status === "gerando" ? "Continuar tiles" : "Gerar tiles"}
+                              </button>
+                            )}
                             {(j.status === "pendente" || j.status === "processando") && (
                               <button
                                 onClick={async () => {
@@ -409,6 +445,7 @@ function UploadModal({
     starting: "Preparando camada...",
     processing: `Processando feições... ${progress?.processed.toLocaleString("pt-BR") ?? 0} / ${progress?.total.toLocaleString("pt-BR") ?? 0}`,
     finalizing: "Cruzando com imóveis cadastrados...",
+    tiles: "Pré-gerando recortes do mapa...",
     done: "Concluído!",
   };
 

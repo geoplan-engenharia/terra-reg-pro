@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
       status,
       features_imported: inserted,
       properties_linked: linked ?? 0,
+      tiles_status: null, tiles_done: 0, tiles_saved: 0, tiles_total: null,
       finished_at: new Date().toISOString(),
       log: `${inserted.toLocaleString("pt-BR")} feições importadas, ${linked ?? 0} imóveis vinculados${(job.failed_features ?? 0) > 0 ? `, ${job.failed_features} com erro` : ""}.`,
     }).eq("id", job.id);
