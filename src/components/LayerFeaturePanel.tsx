@@ -20,9 +20,11 @@ export function LayerFeaturePanel({
   layer,
   onClose,
   onImported,
+  loading = false,
 }: {
   feature: DataLayerFeature;
   layer: DataLayer;
+  loading?: boolean;
   onClose: () => void;
   onImported?: (propertyId: string) => void;
 }) {
@@ -69,6 +71,11 @@ export function LayerFeaturePanel({
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
               {layer.name}
             </span>
+            {loading && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> carregando
+              </span>
+            )}
           </div>
           <h2 className="text-sm font-semibold mt-1.5 truncate">
             {feature.external_id ?? "Feição " + feature.id.slice(0, 8)}
@@ -123,7 +130,8 @@ export function LayerFeaturePanel({
           <section className="px-5 py-4 space-y-2">
             <button
               onClick={() => setShowForm(true)}
-              className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
             >
               <Download className="h-4 w-4" /> Salvar como imóvel monitorado
             </button>

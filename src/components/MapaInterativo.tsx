@@ -79,8 +79,17 @@ function buildStyle(id: BasemapId): StyleSpecification {
   return style;
 }
 
-const tileUrl = (layerId: string) =>
-  `${window.location.origin}/api/public/vector-tile?z={z}&x={x}&y={y}&layer_id=${layerId}`;
+// `v` muda quando a camada é reimportada, invalidando caches de navegador e borda.
+const layerVersion = (l: DataLayer) => {
+  const t = Date.parse(l.last_sync_at ?? l.updated_at ?? "");
+  return Number.isFinite(t) ? Math.floor(t / 1000).toString(36) : "0";
+};
+const tileUrl = (l: DataLayer) =>
+  `${window.location.origin}/api/public/vector-tile?z={z}&x={x}&y={y}&layer_id=${l.id}&v=${layerVersion(l)}`;
+
+// Só as colunas usadas pelo painel: evita trazer as 4 cópias da geometria.
+const FEATURE_COLUMNS =
+  "id,layer_id,data_source_key,external_id,geometry_geojson,properties_json,municipality,uf,area_ha,source_updated_at,created_at";
 
 export function MapaInterativo() {
   const { canEditProperties } = useAuth();
@@ -92,7 +101,10 @@ export function MapaInterativo() {
   const [busca, setBusca] = useState("");
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<RuralProperty | null>(null);
-  const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer } | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<{ feature: DataLayerFeature; layer: DataLayer; loading?: boolean } | null>(null);
+  const clickSeq = useRef(0);
+  const hoverHandlers = useRef<{ setPointer: () => void; clearPointer: () => void } | null>(null);
+  const hoverBound = useRef<Set<string>>(new Set());
   const [basemap, setBasemap] = useState<BasemapId>("hybrid");
   const [zoomLevel, setZoomLevel] = useState(4);
   const [styleVersion, setStyleVersion] = useState(0);
@@ -173,6 +185,7 @@ export function MapaInterativo() {
       // Properties first
       const props = map.queryRenderedFeatures(e.point, { layers: map.getLayer("props-circle") ? ["props-circle"] : [] });
       if (props.length) {
+        clickSeq.current++;
         setSelectedId(String(props[0].properties?.id));
         setSelectedFeature(null);
         return;
@@ -190,24 +203,54 @@ export function MapaInterativo() {
         toast.info("Aproxime o mapa para clicar em um imóvel individual.");
         return;
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).rpc("get_feature_by_id", { _feature_id: featId });
-      const row = (Array.isArray(data) ? data[0] : data) as DataLayerFeature | undefined;
-      if (error || !row) { toast.error("Não foi possível carregar os dados da feição."); return; }
-      setSelectedFeature({ feature: row, layer });
+      // Abre o painel na hora com o que já veio no tile; o restante chega em seguida.
+      const tp = hit.properties ?? {};
+      const preview = {
+        id: featId,
+        layer_id: layer.id,
+        data_source_key: layer.data_source_key,
+        external_id: (tp.cod_imovel as string) || null,
+        geometry_geojson: null as unknown as GeoJSON.Geometry,
+        properties_json: {},
+        municipality: (tp.municipio as string) || null,
+        uf: null,
+        area_ha: typeof tp.area_ha === "number" ? tp.area_ha : null,
+        source_updated_at: null,
+        created_at: "",
+      } as DataLayerFeature;
+      const reqId = ++clickSeq.current;
+      setSelectedFeature({ feature: preview, layer, loading: true });
       setSelectedId(null);
-      const b = geomBounds(row.geometry_geojson);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      let row: DataLayerFeature | undefined;
+      const direct = await sb.from("data_layer_features").select(FEATURE_COLUMNS).eq("id", featId).maybeSingle();
+      if (!direct.error && direct.data) row = direct.data as DataLayerFeature;
+      else {
+        // Fallback (ex.: super admin vendo camada oculta)
+        const { data, error } = await sb.rpc("get_feature_by_id", { _feature_id: featId });
+        if (error) console.error("[mapa] get_feature_by_id:", error);
+        row = (Array.isArray(data) ? data[0] : data) as DataLayerFeature | undefined;
+      }
+      if (reqId !== clickSeq.current) return; // usuário já clicou em outro
+      if (!row) {
+        if (direct.error) console.error("[mapa] feature query:", direct.error);
+        toast.error("Não foi possível carregar os dados completos deste imóvel.");
+        setSelectedFeature({ feature: preview, layer, loading: false });
+        return;
+      }
+      setSelectedFeature({ feature: row, layer, loading: false });
+      const b = row.geometry_geojson ? geomBounds(row.geometry_geojson) : null;
       if (b) map.fitBounds(b, { padding: 80, maxZoom: 16, duration: 800 });
     });
 
-    map.on("mousemove", (e: maplibregl.MapMouseEvent) => {
-      const ids = [
-        "props-circle",
-        ...stateRef.current.activeLayersList.flatMap((l) => [`dl-fill-${l.id}`, `dl-pts-${l.id}`]),
-      ].filter((id) => map.getLayer(id));
-      const f = ids.length ? map.queryRenderedFeatures(e.point, { layers: ids }) : [];
-      map.getCanvas().style.cursor = f.length ? "pointer" : "";
-    });
+    // Cursor "mãozinha" por camada (não varre o mapa a cada movimento do mouse)
+    const setPointer = () => { if (toolModeRef.current === "none") map.getCanvas().style.cursor = "pointer"; };
+    const clearPointer = () => { if (toolModeRef.current === "none") map.getCanvas().style.cursor = ""; };
+    map.on("mouseenter", "props-circle", setPointer);
+    map.on("mouseleave", "props-circle", clearPointer);
+    hoverHandlers.current = { setPointer, clearPointer };
 
     mapRef.current = map;
     setMapObj(map);
@@ -241,7 +284,7 @@ export function MapaInterativo() {
     for (const l of activeLayersList) {
       const src = `dl-src-${l.id}`;
       if (!map.getSource(src)) {
-        map.addSource(src, { type: "vector", tiles: [tileUrl(l.id)], minzoom: 2, maxzoom: 16 });
+        map.addSource(src, { type: "vector", tiles: [tileUrl(l)], minzoom: 2, maxzoom: 16 });
         map.addLayer({
           id: `dl-pts-${l.id}`, type: "circle", source: src, "source-layer": "points", maxzoom: 9,
           paint: {
@@ -263,6 +306,16 @@ export function MapaInterativo() {
           filter: ["==", ["get", "id"], ""],
           paint: { "line-color": "#ffffff", "line-width": 3 },
         }, before);
+      }
+      // Listeners de camada ficam no mapa mesmo após troca de estilo: registra uma vez só.
+      const h = hoverHandlers.current;
+      if (h) {
+        for (const lid of [`dl-fill-${l.id}`, `dl-pts-${l.id}`]) {
+          if (hoverBound.current.has(lid)) continue;
+          map.on("mouseenter", lid, h.setPointer);
+          map.on("mouseleave", lid, h.clearPointer);
+          hoverBound.current.add(lid);
+        }
       }
     }
   }, [activeLayersList, styleVersion]);
@@ -465,7 +518,8 @@ export function MapaInterativo() {
         <LayerFeaturePanel
           feature={selectedFeature.feature}
           layer={selectedFeature.layer}
-          onClose={() => setSelectedFeature(null)}
+          loading={selectedFeature.loading}
+          onClose={() => { clickSeq.current++; setSelectedFeature(null); }}
           onImported={(id) => {
             setSelectedFeature(null);
             setSelectedId(id);
