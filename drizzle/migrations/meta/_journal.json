@@ -22,6 +22,13 @@
       "when": 1790968464869,
       "tag": "0002_layer_points_narrow_table",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793886781227,
+      "tag": "0003_tighten_reads_and_postgis",
+      "breakpoints": true
     }
   ]
 }
