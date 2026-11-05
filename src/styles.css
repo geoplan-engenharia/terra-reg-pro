@@ -159,22 +159,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Leaflet dark theme tweaks */
-  .leaflet-container {
-    background: var(--color-muted);
-    font-family: var(--font-sans);
-  }
-  .leaflet-tile-pane {
-    filter: none;
-  }
-  .leaflet-control-zoom a,
-  .leaflet-control-attribution {
-    background: var(--color-card) !important;
-    color: var(--color-foreground) !important;
-    border-color: var(--color-border) !important;
-  }
-  .leaflet-control-attribution a { color: var(--color-primary) !important; }
-
   /* Scrollbar */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--color-background); }
