@@ -1,5 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+// Chaves públicas do login (JWKS) ficam em memória no Worker; o jose só busca
+// de novo quando aparece uma chave desconhecida — sem chamada de rede por tile.
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+async function verifyUser(request: Request): Promise<boolean> {
+  const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (!token) return false;
+  const base = process.env.SUPABASE_URL;
+  if (!base) return false;
+  const issuer = `${base.replace(/\/$/, "")}/auth/v1`;
+  jwks ??= createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`), { cacheMaxAge: 6 * 3600_000 });
+  try {
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer, audience: "authenticated", algorithms: ["ES256", "RS256", "EdDSA"],
+    });
+    return typeof payload.sub === "string";
+  } catch {
+    return false;
+  }
+}
 
 const BUCKET = "vector-tiles-cache";
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -7,7 +28,7 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
 // Navegador guarda 1h; cache da borda (Cloudflare) guarda 24h.
 // A URL carrega `v` (versão da camada), então uma reimportação gera URLs novas
 // e o cache antigo simplesmente deixa de ser usado.
-const BROWSER_CACHE = "public, max-age=3600";
+const BROWSER_CACHE = "private, max-age=3600";
 const EDGE_CACHE = "public, max-age=86400";
 
 function hexToBytes(hex: string): Uint8Array {
@@ -73,6 +94,10 @@ export const Route = createFileRoute("/api/public/vector-tile")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        // Exige usuário logado antes de qualquer cache.
+        if (!(await verifyUser(request))) {
+          return new Response("unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
+        }
         const url = new URL(request.url);
         const z = Number(url.searchParams.get("z"));
         const x = Number(url.searchParams.get("x"));

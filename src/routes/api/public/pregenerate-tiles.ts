@@ -94,7 +94,7 @@ export const Route = createFileRoute("/api/public/pregenerate-tiles")({
             .update({ tiles_status: "gerando", tiles_total: total, tiles_done: done, tiles_saved: saved }).eq("id", job.id);
 
           const bucket = admin.storage.from("vector-tiles-cache");
-          const one = async (idx: number) => {
+          const one = async (idx: number): Promise<number> => {
             const t = tileAt(ranges, idx)!;
             // Usa o cliente do super admin: gera também camadas ocultas.
             const { data, error } = await user.rpc("get_vector_tile_bin", { _layer_id: job.layer_id, _z: t.z, _x: t.x, _y: t.y });
