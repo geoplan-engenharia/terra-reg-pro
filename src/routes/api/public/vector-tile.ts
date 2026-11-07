@@ -2,24 +2,77 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
-// Chaves públicas do login (JWKS) ficam em memória no Worker; o jose só busca
-// de novo quando aparece uma chave desconhecida — sem chamada de rede por tile.
+// Verificação do login por tile, sem chamada de rede a cada tile:
+// 1) tokens já validados ficam em memória até expirarem;
+// 2) projetos com chaves assimétricas validam localmente via JWKS (jose);
+// 3) projetos com chave legada (HS256) caem no auth do Supabase, uma vez por token.
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+const verified = new Map<string, number>(); // token -> expira em (ms)
+const MAX_CACHED_TOKENS = 500;
+
+function tokenExpMs(token: string): number {
+  try {
+    const part = token.split(".")[1] ?? "";
+    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json.exp === "number" ? json.exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function remember(token: string) {
+  const exp = tokenExpMs(token) || Date.now() + 5 * 60_000;
+  if (verified.size >= MAX_CACHED_TOKENS) {
+    const now = Date.now();
+    for (const [k, v] of verified) if (v <= now) verified.delete(k);
+    if (verified.size >= MAX_CACHED_TOKENS) verified.clear();
+  }
+  verified.set(token, exp);
+}
+
 async function verifyUser(request: Request): Promise<boolean> {
   const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   if (!token) return false;
+
+  const cachedExp = verified.get(token);
+  if (cachedExp !== undefined) {
+    if (cachedExp > Date.now()) return true;
+    verified.delete(token);
+  }
+
   const base = process.env.SUPABASE_URL;
   if (!base) return false;
   const issuer = `${base.replace(/\/$/, "")}/auth/v1`;
-  jwks ??= createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`), { cacheMaxAge: 6 * 3600_000 });
+
+  // Caminho rápido: chave assimétrica, validada localmente.
   try {
-    const { payload } = await jwtVerify(token, jwks, {
-      issuer, audience: "authenticated", algorithms: ["ES256", "RS256", "EdDSA"],
+    jwks ??= createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`), {
+      cacheMaxAge: 6 * 3600_000,
     });
-    return typeof payload.sub === "string";
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer,
+      audience: "authenticated",
+      algorithms: ["ES256", "RS256", "EdDSA"],
+    });
+    if (typeof payload.sub === "string") {
+      remember(token);
+      return true;
+    }
   } catch {
-    return false;
+    /* segue para o fallback */
   }
+
+  // Fallback: chave legada ou JWKS indisponível — o Supabase valida o token.
+  try {
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (!error && data.user?.id) {
+      remember(token);
+      return true;
+    }
+  } catch {
+    /* inválido */
+  }
+  return false;
 }
 
 const BUCKET = "vector-tiles-cache";
